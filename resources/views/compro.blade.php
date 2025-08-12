@@ -7,11 +7,50 @@
     <!-- Preloader -->
     <div class="loader">
         <div class="loader-inner">
-            <svg width="120" height="220" viewbox="0 0 100 100" class="loading-spinner" version="1.1" xmlns="http://www.w3.org/2000/svg">
+            <svg width="120" height="220" viewBox="0 0 100 100" class="loading-spinner" version="1.1"
+                xmlns="http://www.w3.org/2000/svg">
                 <circle class="spinner" cx="50" cy="50" r="21" fill="#141414" stroke-width="2" />
             </svg>
         </div>
     </div>
+
+    <!-- Header -->
+    <header class="header stopping">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-2">
+                    <a class="scroll logo" href="#wrapper">
+                        <img class="mb-0" src="{{ asset('compro/img/ndelogo.png') }}" alt="Nde Logo">
+                    </a>
+                </div>
+                <div class="col-lg-10 text-right">
+                    <nav class="main-nav">
+                        <div class="toggle-mobile-but">
+                            <a href="javascript:void(0)" class="mobile-but">
+                                <div class="lines"></div>
+                            </a>
+                        </div>
+                        <ul class="main-menu list-inline">
+                            <li><a class="scroll list-inline-item" href="#wrapper">Home</a></li>
+                            <li><a class="scroll list-inline-item" href="#about">About</a></li>
+                            <li><a class="scroll list-inline-item" href="#discography">Partnerships</a></li>
+                            <li><a class="scroll list-inline-item" href="#dashboard">Exposure</a></li>
+                            <li><a class="scroll list-inline-item" href="#contact">Contact</a></li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Wrapper -->
+    <section id="wrapper">
+        <!-- isi konten di sini -->
+    </section>
+</body>
+
+
+
 <!-- Wrapper -->
 <div class="wrapper">
     <!-- Hero Section -->
@@ -54,35 +93,6 @@
             </ul>
         </div>
 
-        <!-- Header -->
-        <header class="header stopping">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-2">
-                        <a class="scroll logo" href="#wrapper">
-                            <img class="mb-0" src="{{ asset('compro/img/ndelogo.png') }}" alt="Nde Logo">
-                        </a>
-                    </div>
-                    <div class="col-lg-10 text-right">
-                        <nav class="main-nav">
-                            <div class="toggle-mobile-but">
-                                <a href="#" class="mobile-but">
-                                    <div class="lines"></div>
-                                </a>
-                            </div>
-                            <ul class="main-menu list-inline">
-                                <li><a class="scroll list-inline-item" href="#wrapper">Home</a></li>
-                                <li><a class="scroll list-inline-item" href="#about">About</a></li>
-                                <li><a class="scroll list-inline-item" href="#discography">Partnerships</a></li>
-                                <li><a class="scroll list-inline-item" href="#dashboard">Exposure</a></li>
-                                <li><a class="scroll list-inline-item" href="#contact">Contact</a></li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-        </header>
-    </section>
 
     <!-- About Section -->
     <section id="about" class="about main brd-bottom">
@@ -518,6 +528,47 @@
                 }
             }
         });
+
+        let lastScrollTop = 0;
+const navbar = document.querySelector('.header');
+
+window.addEventListener('scroll', function() {
+    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+    if (scrollTop > lastScrollTop) {
+        // Scroll ke bawah → sembunyikan
+        navbar.style.top = "-80px"; // tinggi navbar
+    } else {
+        // Scroll ke atas → tampilkan
+        navbar.style.top = "0";
+    }
+
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; // biar nggak negatif
+});
+document.addEventListener("DOMContentLoaded", () => {
+  const mobileBut = document.querySelector(".mobile-but");
+  const mainMenu = document.querySelector(".main-menu");
+
+  if (!mobileBut || !mainMenu) return;
+
+  // Toggle menu saat hamburger diklik (hanya di mobile)
+  mobileBut.addEventListener("click", (e) => {
+    e.preventDefault();
+    mainMenu.classList.toggle("active");
+  });
+
+  // Auto close menu saat klik item menu di mobile
+  mainMenu.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      if (window.innerWidth <= 990) {
+        mainMenu.classList.remove("active");
+      }
+    });
+  });
+});
+
+
+
     </script>
 
     @stack('scripts')

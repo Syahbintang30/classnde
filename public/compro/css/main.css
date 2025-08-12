@@ -199,9 +199,11 @@ Created by : mutationthemes
 }
 
 .navbar {
-    display: flex;
-    align-items: center;
-    height: 80px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    transition: top 0.3s ease-in-out;
+    z-index: 999;
 }
 
 .header .logo {
@@ -213,11 +215,18 @@ Created by : mutationthemes
 .header .logo:hover img {
 	opacity: 1;
 }
+.main-menu {
+    display: none;
+}
+.main-menu.active {
+    display: block;
+}
+
 .mobile-but {
 	height: 1.5rem;
 	position: absolute;
 	right: 15px;
-	top: -32px;
+	top: -39px;
 	z-index: 1000;
 	display: none;
 }
@@ -1524,5 +1533,76 @@ ol.playlist .col-lg-6 a {
   width: 100% !important;
   height: auto !important;
   margin: 0 auto;
+}
+.main-nav {
+	position: relative;
+	z-index: 1000; /* Pastikan menu di atas elemen lain */
+}
+/* Default: sembunyikan hamburger, tampilkan menu horizontal */
+@media (min-width: 991px) {
+  .mobile-but {
+    display: none !important;
+  }
+  .main-menu {
+    display: flex !important;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .main-menu li {
+    margin-left: 25px;
+  }
+  .main-menu li a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 400;
+    font-size: 12px;
+  }
+}
+
+/* Mobile: tampilkan hamburger, sembunyikan menu default */
+@media (max-width: 990px) {
+  .mobile-but {
+    display: block !important;
+    cursor: pointer;
+  }
+  .main-menu {
+    display: none !important;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #141414;
+    padding: 10px 0;
+    z-index: 9999;
+    border-radius: 0 0 8px 8px;
+  }
+  .main-menu.active {
+    display: flex !important;
+  }
+  .main-menu li {
+    margin: 10px 0;
+    text-align: center;
+  }
+  .main-menu li a {
+    color: #fff;
+    font-size: 18px;
+    padding: 8px 12px;
+  }
+}
+
+
+
+
+
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
