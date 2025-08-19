@@ -24,6 +24,7 @@
     @yield('content')
 
     <!-- Scripts -->
+     
     <script src="{{ asset('compro/js/jquery-1.12.4.min.js') }}"></script>
     <script src="{{ asset('compro/js/jquery.flexslider-min.js') }}"></script>
     <script src="{{ asset('compro/js/smooth-scroll.js') }}"></script>

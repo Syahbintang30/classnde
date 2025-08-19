@@ -1,0 +1,193 @@
+/* Body */
+body {
+    margin: 0;
+    background: #000;
+    font-family: Arial, sans-serif;
+    color: #fff;
+}
+
+/* Container utama: sidebar + main */
+.kelas-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 280px;
+    background: #141414;
+    border-right: 1px solid #333;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    padding: 20px;
+    overflow-y: auto;
+    transition: left 0.3s ease;
+    z-index: 1100;
+}
+
+/* Logo */
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    margin: -25px auto 5px;
+}
+
+.logo-container img {
+    max-width: 50%;
+    height: auto;
+}
+
+/* Menu */
+.menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.menu-item:hover {
+    background: #222;
+}
+
+.submenu {
+    list-style: none;
+    padding-left: 20px;
+    margin: 5px 0;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.submenu li:hover {
+    color: #fff;
+}
+
+/* Main wrapper */
+.main-wrapper {
+    margin-left: 280px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+    position: sticky;
+    top: 0;
+    background: #000;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+}
+
+.nav-left {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.nav-right {
+    display: flex;
+    gap: 30px;
+}
+
+.nav-right a {
+    color: #888;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.nav-right a:hover {
+    color: #fff;
+}
+
+/* Content */
+.content {
+    padding: 20px;
+}
+
+video {
+    width: 100%;
+    border-radius: 20px;
+}
+
+/* Burger button */
+.burger {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #fff;
+    cursor: pointer;
+    display: none;
+}
+
+/* Tablet & Mobile Layout */
+@media (max-width: 991px) {
+    .main-wrapper {
+        margin-left: 0;
+    }
+
+    .sidebar {
+        left: -280px;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    .burger {
+        display: block;
+    }
+
+    .nav-right {
+        gap: 15px;
+    }
+
+    .nav-right a {
+        font-size: 0.9rem;
+    }
+
+    .logo-container {
+        width: 120px;
+    }
+
+    .logo-container img {
+        max-width: 70%;
+    }
+}
+
+/* Mobile Layout */
+@media (max-width: 576px) {
+    .navbar {
+        padding: 8px 12px;
+    }
+
+    .burger {
+        font-size: 1.2rem;
+    }
+
+    .nav-right {
+        gap: 10px;
+    }
+
+    .nav-right a {
+        font-size: 0.8rem;
+    }
+
+    .content {
+        padding: 15px;
+    }
+
+    video {
+        border-radius: 10px;
+    }
+}

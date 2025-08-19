@@ -361,6 +361,14 @@
                 </div>
             </div>
         </div>
+            
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+    <a class="btn btn-primary with-ico" href="{{ route('kelas') }}">
+        <i class="icon-user"></i> Work with Me
+    </a>
+</div>
+
+</div>
     </section>
     <!-- Contact Section -->
     <section id="contact" class="contact main top bg-secondary text-white py-5">
