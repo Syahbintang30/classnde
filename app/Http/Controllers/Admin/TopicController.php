@@ -19,9 +19,11 @@ class TopicController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'video_url' => 'required|url',
+            'description' => 'nullable|string',
+            'position' => 'nullable|integer',
         ]);
 
-        $lesson->topics()->create($request->only(['title', 'video_url']));
+        $lesson->topics()->create($request->only(['title', 'video_url', 'description', 'position']));
 
         return redirect()->route('admin.lessons.show', $lesson->id)->with('success', 'Topik berhasil ditambahkan.');
     }
@@ -36,9 +38,11 @@ class TopicController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'video_url' => 'required|url',
+            'description' => 'nullable|string',
+            'position' => 'nullable|integer',
         ]);
 
-        $topic->update($request->only(['title', 'video_url']));
+        $topic->update($request->only(['title', 'video_url', 'description', 'position']));
 
         return redirect()->route('admin.lessons.show', $lesson->id)->with('success', 'Topik berhasil diperbarui.');
     }

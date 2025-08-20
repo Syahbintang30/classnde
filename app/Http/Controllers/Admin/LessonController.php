@@ -10,7 +10,7 @@ class LessonController extends Controller
 {
     public function index()
     {
-        $lessons = Lesson::paginate(10);
+    $lessons = Lesson::orderBy('position')->paginate(10);
         return view('admin.lessons.index', compact('lessons'));
     }
 
@@ -21,12 +21,13 @@ class LessonController extends Controller
 
     public function store(Request $request)
     {
+
         $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'position' => 'nullable|integer',
         ]);
 
-        Lesson::create($request->only(['title', 'description']));
+        Lesson::create($request->only(['title', 'position']));
 
         return redirect()->route('admin.lessons.index')->with('success', 'Lesson berhasil ditambahkan.');
     }
@@ -46,10 +47,10 @@ class LessonController extends Controller
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'position' => 'nullable|integer',
         ]);
 
-        $lesson->update($request->only(['title', 'description']));
+        $lesson->update($request->only(['title', 'position']));
 
         return redirect()->route('admin.lessons.index')->with('success', 'Lesson berhasil diperbarui.');
     }

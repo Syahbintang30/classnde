@@ -14,6 +14,14 @@
         <label>Video URL</label>
         <input type="url" name="video_url" value="{{ $topic->video_url }}" class="form-control" required>
     </div>
+    <div class="mb-3">
+        <label>Description</label>
+        <textarea name="description" class="form-control">{{ $topic->description }}</textarea>
+    </div>
+    <div class="mb-3">
+        <label>Position</label>
+        <input type="number" name="position" value="{{ $topic->position ?? 0 }}" class="form-control">
+    </div>
     <button class="btn btn-primary">Update</button>
     <a href="{{ route('admin.lessons.show', $lesson->id) }}" class="btn btn-secondary">Kembali</a>
 </form>

@@ -17,7 +17,10 @@
             <th>ID</th>
             <th>Lesson</th>
             <th>Title</th>
-            <th>Content</th>
+            <th>Video URL</th>
+            <th>Description</th>
+            <th>Position</th>
+            <th>Created</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -27,14 +30,13 @@
             <td>{{ $topic->id }}</td>
             <td>{{ $topic->lesson->title ?? 'N/A' }}</td>
             <td>{{ $topic->title }}</td>
-            <td>{{ Str::limit($topic->content,50) }}</td>
+            <td>{{ $topic->video_url }}</td>
+            <td>{{ Str::limit($topic->description ?? $topic->content ?? '', 80) }}</td>
+            <td>{{ $topic->position ?? '-' }}</td>
+            <td>{{ $topic->created_at?->format('Y-m-d') }}</td>
             <td>
                 <a href="{{ route('admin.topics.edit', $topic->id) }}" class="btn btn-sm btn-warning">Edit</a>
                 <form action="{{ route('admin.topics.destroy', $topic->id) }}" method="POST" style="display:inline-block;">
-                <div class="mb-3">
-            <label>Video URL (BunnyNet)</label>
-            <input type="url" name="video_url" class="form-control" required>
-        </div>
                     @csrf
                     @method('DELETE')
                     <button class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
@@ -43,7 +45,7 @@
         </tr>
         @empty
         <tr>
-            <td colspan="5">No topics found.</td>
+            <td colspan="8">No topics found.</td>
         </tr>
         @endforelse
     </tbody>

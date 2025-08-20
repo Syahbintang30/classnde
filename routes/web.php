@@ -15,6 +15,8 @@ Route::get('/', function () {
 
 
 Route::get('/kelas', [KelasController::class, 'index'])->name('kelas');
+Route::get('/kelas/{lesson}', [KelasController::class, 'show'])->name('kelas.show');
+Route::get('/kelas/{lesson}/content', [KelasController::class, 'content'])->name('kelas.content');
 
 // Route::get('/admin', [LessonController::class, 'index'])->name('admin.lessons.index');
 // Route::get('/admin/create', [LessonController::class, 'create'])->name('admin.lessons.create');
@@ -39,6 +41,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('lessons/{lesson}/topics/{topic}/edit', [TopicController::class, 'edit'])->name('topics.edit');
     Route::put('lessons/{lesson}/topics/{topic}', [TopicController::class, 'update'])->name('topics.update');
     Route::delete('lessons/{lesson}/topics/{topic}', [TopicController::class, 'destroy'])->name('topics.destroy');
+});
+
+// Topic progress endpoints (authenticated users)
+Route::middleware('auth')->group(function () {
+    Route::post('/topics/{topic}/progress', [App\Http\Controllers\TopicProgressController::class, 'store'])->name('topics.progress.store');
+    Route::get('/topics/{topic}/progress', [App\Http\Controllers\TopicProgressController::class, 'show'])->name('topics.progress.show');
 });
 
 

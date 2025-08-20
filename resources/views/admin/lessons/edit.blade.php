@@ -11,9 +11,10 @@
         <input type="text" name="title" value="{{ $lesson->title }}" class="form-control" required>
     </div>
     <div class="mb-3">
-        <label>Deskripsi</label>
-        <textarea name="description" class="form-control">{{ $lesson->description }}</textarea>
+        <label>Position (urutan)</label>
+        <input type="number" name="position" value="{{ $lesson->position ?? 0 }}" class="form-control">
     </div>
+    
     <button class="btn btn-primary">Update</button>
     <a href="{{ route('admin.lessons.index') }}" class="btn btn-secondary">Kembali</a>
 </form>

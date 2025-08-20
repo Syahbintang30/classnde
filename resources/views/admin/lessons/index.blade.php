@@ -12,7 +12,6 @@
         <thead>
             <tr>
                 <th>Judul</th>
-                <th>Deskripsi</th>
                 <th>Aksi</th>
             </tr>
         </thead>
@@ -20,7 +19,6 @@
             @forelse($lessons as $lesson)
                 <tr>
                     <td>{{ $lesson->title }}</td>
-                    <td>{{ Str::limit($lesson->description, 50) }}</td>
                     <td>
                         <a href="{{ route('admin.lessons.show', $lesson->id) }}" class="btn btn-info btn-sm">Detail</a>
                         <a href="{{ route('admin.lessons.edit', $lesson->id) }}" class="btn btn-warning btn-sm">Edit</a>
@@ -32,7 +30,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" class="text-center">Belum ada lesson</td>
+                    <td colspan="2" class="text-center">Belum ada lesson</td>
                 </tr>
             @endforelse
         </tbody>

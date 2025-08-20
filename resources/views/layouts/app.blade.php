@@ -6,6 +6,7 @@
     <title>@yield('title', 'Nde Official')</title>
     <meta name="description" content="@yield('description', 'Nde Official - Exclusive Guitar Sessions')">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Css -->
     <link href="{{ asset('compro/css/bootstrap.css') }}" rel="stylesheet" type="text/css" media="all" />
