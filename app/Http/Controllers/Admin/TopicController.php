@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\BunnyController;
 use App\Models\Lesson;
 use App\Models\Topic;
 use Illuminate\Http\Request;
@@ -18,12 +19,17 @@ class TopicController extends Controller
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'video_url' => 'required|url',
+            'bunny_guid' => 'nullable|string',
             'description' => 'nullable|string',
             'position' => 'nullable|integer',
         ]);
 
-        $lesson->topics()->create($request->only(['title', 'video_url', 'description', 'position']));
+        $data = $request->only(['title', 'bunny_guid', 'description', 'position']);
+
+    // If admin provided a Bunny GUID, keep it; playback URL will be derived at read-time.
+    // Do NOT write a `video_url` column because it may have been removed.
+
+        $lesson->topics()->create($data);
 
         return redirect()->route('admin.lessons.show', $lesson->id)->with('success', 'Topik berhasil ditambahkan.');
     }
@@ -37,12 +43,15 @@ class TopicController extends Controller
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'video_url' => 'required|url',
+            'bunny_guid' => 'nullable|string',
             'description' => 'nullable|string',
             'position' => 'nullable|integer',
         ]);
 
-        $topic->update($request->only(['title', 'video_url', 'description', 'position']));
+        $data = $request->only(['title', 'bunny_guid', 'description', 'position']);
+
+    // Do not write video_url; frontend will resolve playback URL from bunny_guid.
+    $topic->update($data);
 
         return redirect()->route('admin.lessons.show', $lesson->id)->with('success', 'Topik berhasil diperbarui.');
     }

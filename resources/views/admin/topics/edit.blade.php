@@ -4,15 +4,16 @@
 
 @section('content')
 <h1>Edit Topik untuk {{ $lesson->title }}</h1>
-<form action="{{ route('admin.topics.update', [$lesson->id, $topic->id]) }}" method="POST">
+<form action="{{ route('admin.topics.update', [$lesson->id, $topic->id]) }}" method="POST" enctype="multipart/form-data">
     @csrf @method('PUT')
     <div class="mb-3">
         <label>Judul Topik</label>
         <input type="text" name="title" value="{{ $topic->title }}" class="form-control" required>
     </div>
     <div class="mb-3">
-        <label>Video URL</label>
-        <input type="url" name="video_url" value="{{ $topic->video_url }}" class="form-control" required>
+        <label>Bunny Video ID (GUID)</label>
+        <input type="text" name="bunny_guid" value="{{ $topic->bunny_guid }}" class="form-control" placeholder="Masukkan Bunny video GUID jika ada">
+        <small class="form-text text-muted">Jika Anda sudah mengupload video manual di Bunny, masukkan GUID di sini.</small>
     </div>
     <div class="mb-3">
         <label>Description</label>
@@ -25,4 +26,8 @@
     <button class="btn btn-primary">Update</button>
     <a href="{{ route('admin.lessons.show', $lesson->id) }}" class="btn btn-secondary">Kembali</a>
 </form>
+@endsection
+
+@section('scripts')
+<!-- Client-side upload removed. Admins should paste Bunny GUID manually. -->
 @endsection

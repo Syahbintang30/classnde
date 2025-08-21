@@ -11,28 +11,14 @@ class TopicProgressController extends Controller
 {
     public function store(Request $request, Topic $topic)
     {
-        $user = Auth::user();
-        if (!$user) return response()->json(['error' => 'Unauthenticated'], 401);
-
-        $data = $request->validate([
-            'watched_seconds' => 'required|integer|min:0',
-            'completed' => 'nullable|boolean',
-        ]);
-
-        $progress = TopicProgress::updateOrCreate(
-            ['user_id' => $user->id, 'topic_id' => $topic->id],
-            ['watched_seconds' => $data['watched_seconds'], 'completed' => $data['completed'] ?? false]
-        );
-
-        return response()->json(['status' => 'ok', 'progress' => $progress]);
+    // Progress tracking disabled: accept request but do not store anything.
+    // Return 204 No Content to indicate request processed.
+    return response()->noContent();
     }
 
     public function show(Topic $topic)
     {
-        $user = Auth::user();
-        if (!$user) return response()->json(['error' => 'Unauthenticated'], 401);
-
-        $progress = TopicProgress::where('user_id', $user->id)->where('topic_id', $topic->id)->first();
-        return response()->json(['progress' => $progress]);
+    // Progress tracking disabled: always return no progress
+    return response()->json(['progress' => null]);
     }
 }

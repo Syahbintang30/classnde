@@ -56,7 +56,7 @@ class LessonTopicSeeder extends Seeder
                 $lesson->topics()->create([
                     'title' => $t[0],
                     'description' => $t[1],
-                    'video_url' => $t[2],
+                    'bunny_guid' => null,
                     'position' => $tpos++,
                 ]);
             }

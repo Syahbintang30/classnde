@@ -26,7 +26,15 @@
         <tr>
             <td>{{ $topic->position }}</td>
             <td>{{ $topic->title }}</td>
-            <td><a href="{{ $topic->video_url }}" target="_blank">Lihat Video</a></td>
+            <td>
+                @if($topic->bunny_guid)
+                    <a href="{{ route('topics.stream', $topic->id) }}" target="_blank">Lihat Video (Bunny)</a>
+                @elseif(!empty($topic->video_url))
+                    <a href="{{ $topic->video_url }}" target="_blank">Lihat Video</a>
+                @else
+                    -
+                @endif
+            </td>
             <td>{{ Str::limit($topic->description, 80) }}</td>
             <td>
                 <a href="{{ route('admin.topics.edit', [$lesson->id, $topic->id]) }}" class="btn btn-warning btn-sm">Edit</a>

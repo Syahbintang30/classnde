@@ -9,7 +9,7 @@ class Topic extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['lesson_id', 'title', 'video_url', 'description', 'position'];
+    protected $fillable = ['lesson_id', 'title', 'bunny_guid', 'description', 'position'];
 
     public function lesson()
     {

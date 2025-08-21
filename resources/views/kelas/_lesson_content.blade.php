@@ -1,13 +1,18 @@
 @php
     $firstTopic = $lesson->topics->first();
+    $initialGuid = $firstTopic?->bunny_guid ?? '';
     $initialUrl = $firstTopic?->video_url ?? '';
 @endphp
 
 <h1 id="video-title">{{ $firstTopic->title ?? 'No Topic' }}</h1>
 <p id="video-description">{{ $firstTopic->description ?? '' }}</p>
 <div class="player-wrapper">
-    <div id="player" style="position:relative;overflow:hidden;">
-        <div id="video-placeholder" class="video-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#000;" data-video-id="{{ preg_match('/(youtu\.be\/|v=)([A-Za-z0-9_-]{11})/', $initialUrl, $m) ? ($m[2] ?? '') : '' }}">
+    <div id="player" style="position:relative;overflow:hidden;min-height:360px;">
+        {{-- HTML5 player will be injected here when playing Bunny HLS/MP4 --}}
+       <div id="video-placeholder" class="video-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#000;"
+           data-bunny-guid="{{ $initialGuid }}"
+           data-video-id="{{ preg_match('/(youtu\.be\/|v=)([A-Za-z0-9_-]{11})/', $initialUrl, $m) ? ($m[2] ?? '') : '' }}"
+       >
             <button id="custom-play" class="custom-play-btn" aria-label="Play video"></button>
         </div>
     </div>

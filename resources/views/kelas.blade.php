@@ -28,7 +28,7 @@
                     <ul class="topic-list" style="list-style:none;padding-left:26px;display:none;">
                         @forelse($topics as $topic)
                             <li class="topic-item" 
-                                data-video="{{ $topic->video_url }}" 
+                                data-bunny-guid="{{ $topic->bunny_guid }}"
                                 data-description="{{ $topic->description }}"
                                 data-topic-id="{{ $topic->id }}"
                                 style="padding:6px 0; display:flex; align-items:center;">
@@ -88,77 +88,114 @@ function toggleSidebar() {
 }
 
 // Update video, title, description saat klik topik
-// --- YouTube Player + progress tracking ---
-// Load YouTube IFrame API
-var tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-var firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+// --- HLS / HTML5 player + progress tracking (Bunny CDN) ---
+// load hls.js dynamically
+(function loadHlsScript(){
+    if(window.Hls) return;
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+    s.async = true;
+    document.head.appendChild(s);
+})();
 
-let player;
+let player = null; // for YT player or placeholder
+let hlsInstance = null; // for hls.js instance
 let currentTopicId = null;
 let progressTimer = null;
 
-function extractYouTubeId(url){
-    if(!url) return null;
-    var m = url.match(/(youtu\.be\/|v=)([A-Za-z0-9_-]{11})/);
-    return m ? m[2] : null;
-}
+function isYouTubeUrl(url){ return /youtu\.be\/|youtube\.com\/.+v=/.test(url || ''); }
 
-function onYouTubeIframeAPIReady() {
-    // Player will be created lazily when user clicks play. Keep player=null for now.
-    player = null;
-}
-
-function loadTopicVideo(url, topicId, title, description) {
-    const videoId = extractYouTubeId(url);
-    if(!videoId) return;
+function loadTopicVideo(url, topicId, title, description){
     currentTopicId = topicId;
     document.getElementById('video-title').textContent = title;
     document.getElementById('video-description').textContent = description;
-    // set placeholder thumbnail and attach video id for play button
     const placeholder = document.getElementById('video-placeholder');
-    const thumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-    placeholder.style.backgroundImage = `url(${thumb})`;
-    placeholder.setAttribute('data-video-id', videoId);
-    placeholder.setAttribute('data-topic-id', topicId);
-    // clear existing progress timer
-    if(progressTimer) { clearInterval(progressTimer); progressTimer = null; }
-}
+    // clear prior attributes
+    placeholder.removeAttribute('data-video-id');
+    placeholder.removeAttribute('data-stream-url');
+    placeholder.setAttribute('data-topic-id', topicId || '');
 
-function onPlayerStateChange(event) {
-    // YT.PlayerState.PLAYING === 1, PAUSED===2, ENDED===0
-    if(event.data == YT.PlayerState.PLAYING) {
-        // start timer
-        if(progressTimer) clearInterval(progressTimer);
-        progressTimer = setInterval(reportProgress, 10000); // every 10s
-    // hide global ajax spinner when playback actually starts
-    try{ const sp = document.getElementById('ajax-spinner'); if(sp) sp.classList.remove('show'); }catch(e){}
-    } else if(event.data == YT.PlayerState.PAUSED) {
-        // report once immediately
-        reportProgress();
-        if(progressTimer) { clearInterval(progressTimer); progressTimer = null; }
-    } else if(event.data == YT.PlayerState.ENDED) {
-        // mark completed
-        reportProgress(true);
-        if(progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+    if(!url) return;
+
+    if(isYouTubeUrl(url)){
+        // extract YouTube id for backward compatibility
+        const m = url.match(/(youtu\.be\/|v=)([A-Za-z0-9_-]{11})/);
+        const videoId = m ? m[2] : null;
+        if(videoId){
+            const thumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+            placeholder.style.backgroundImage = `url(${thumb})`;
+            placeholder.setAttribute('data-video-id', videoId);
+        }
+    } else {
+        // assume Bunny / HLS or MP4 full URL or path
+        placeholder.style.backgroundImage = '';
+        placeholder.setAttribute('data-stream-url', url);
     }
+
+    // clear existing progress timer
+    if(progressTimer){ clearInterval(progressTimer); progressTimer = null; }
 }
 
-function reportProgress(markComplete = false){
-    if(!currentTopicId || !player) return;
-    const seconds = Math.floor(player.getCurrentTime());
-    const url = `/topics/${currentTopicId}/progress`;
-    const body = { watched_seconds: seconds, completed: markComplete ? 1 : 0 };
+// progress tracking disabled by configuration. reportProgress is a no-op to avoid calling backend.
+function reportProgress(markComplete = false){ /* no-op */ }
 
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify(body)
-    }).catch(err => console.warn('progress save failed', err));
+function createHtml5PlayerAndPlay(streamUrl, topicId){
+    // ensure container
+    const container = document.getElementById('player');
+    if(!container) return;
+    // remove any previous html5 player
+    let v = document.getElementById('html5-player');
+    if(v){ try{ v.pause(); }catch(e){} v.remove(); }
+    // destroy hls instance
+    if(window._hlsInstance){ try{ window._hlsInstance.destroy(); }catch(e){} window._hlsInstance = null; }
+
+    v = document.createElement('video');
+    v.id = 'html5-player'; v.controls = true; v.setAttribute('playsinline','');
+    // position the video absolutely so it sits above the thumbnail placeholder
+    v.style.position = 'absolute'; v.style.top = '0'; v.style.left = '0'; v.style.width = '100%'; v.style.height = '100%'; v.style.zIndex = '2';
+    container.appendChild(v);
+    // hide the placeholder so the video element is visible
+    try{ const ph = document.getElementById('video-placeholder'); if(ph) ph.style.display = 'none'; }catch(e){}
+
+    // attach HLS if available; if hls.js not yet loaded, load it dynamically then retry
+    const attachAndPlay = () => {
+        if(window.Hls && Hls.isSupported()){
+            const hls = new Hls(); window._hlsInstance = hls; hls.loadSource(streamUrl); hls.attachMedia(v);
+            hls.on(Hls.Events.MANIFEST_PARSED, function(){
+                // progress tracking disabled: just play
+                v.play().catch(()=>{});
+            });
+        } else {
+            // native HLS (iOS) or MP4
+            v.src = streamUrl;
+            v.addEventListener('loadedmetadata', function once(){ v.removeEventListener('loadedmetadata', once); v.play().catch(()=>{}); });
+        }
+    };
+
+    if(!window.Hls){
+        // try to load hls.js from CDN, then attach
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+        s.async = true;
+        s.onload = () => { try{ attachAndPlay(); }catch(e){ console.error('hls attach failed', e); } };
+        s.onerror = () => { console.warn('Failed to load hls.js, falling back to native playback'); attachAndPlay(); };
+        document.head.appendChild(s);
+    } else {
+        attachAndPlay();
+    }
+
+    // wire events for progress reporting
+        v.addEventListener('play', function(){ const sp = document.getElementById('ajax-spinner'); if(sp) sp.classList.remove('show'); });
+    v.addEventListener('pause', function(){ /* progress disabled */ });
+    v.addEventListener('ended', function(){ /* progress disabled */ });
+}
+
+function destroyHtml5Player(){
+    const v = document.getElementById('html5-player'); if(v){ try{ v.pause(); }catch(e){} v.remove(); }
+    if(window._hlsInstance){ try{ window._hlsInstance.destroy(); }catch(e){} window._hlsInstance = null; }
+    if(progressTimer){ clearInterval(progressTimer); progressTimer = null; }
+    // restore placeholder visibility when player is destroyed
+    try{ const ph = document.getElementById('video-placeholder'); if(ph) ph.style.display = 'flex'; }catch(e){}
 }
 
 // SPA-like navigation and page initialization
@@ -304,31 +341,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // topic clicks (sidebar only)
     document.querySelectorAll('.topic-item').forEach(item => {
             item.addEventListener('click', () => {
-                const videoUrl = item.getAttribute('data-video');
+                const bunnyGuid = item.getAttribute('data-bunny-guid');
                 const title = item.textContent.trim();
                 const description = item.getAttribute('data-description');
                 const topicId = item.getAttribute('data-topic-id');
                 // persist last topic for this lesson
                 if(lessonId && topicId) localStorage.setItem('kelas_last_topic_' + lessonId, topicId);
                 // SPA-style topic navigation (pushState + play)
-                navigateTopic(lessonId, topicId, videoUrl, true);
+                // We do not pass a videoUrl; the player will request /topics/{id}/stream to get the signed URL based on bunny_guid
+                navigateTopic(lessonId, topicId, null, true);
                 // selection highlight
                 document.querySelectorAll('.topic-item.selected').forEach(s => s.classList.remove('selected'));
                 item.classList.add('selected');
             });
         });
 
-    // fetch progress markers for sidebar topics
+        // progress markers disabled: do not fetch per-topic progress from server
     document.querySelectorAll('.topic-item[data-topic-id]').forEach(item => {
-            const topicId = item.getAttribute('data-topic-id');
-            fetch(`/topics/${topicId}/progress`, { headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') } })
-                .then(r => r.json())
-                .then(data => {
-                    if(data.progress && data.progress.completed){
-                        item.classList.add('completed');
-                        item.innerHTML = '✅ ' + item.innerHTML;
-                    }
-                }).catch(()=>{});
+            // no-op
         });
 
         // play button behavior
@@ -336,23 +366,51 @@ document.addEventListener('DOMContentLoaded', () => {
         if(customPlay){
             customPlay.addEventListener('click', function(){
                 const placeholder = document.getElementById('video-placeholder');
-                const videoId = placeholder ? placeholder.getAttribute('data-video-id') : null;
+                const ytId = placeholder ? placeholder.getAttribute('data-video-id') : null;
+                const streamUrlAttr = placeholder ? placeholder.getAttribute('data-stream-url') : null;
                 const topicId = placeholder ? placeholder.getAttribute('data-topic-id') : null;
-                if(!videoId) return;
-                // create or load player
-                if(!player){
-                    player = new YT.Player('player', {
-                        height: '100%', width: '100%', videoId: videoId,
-                        playerVars: { rel:0, modestbranding:1 },
-                        events: { 'onStateChange': onPlayerStateChange, 'onReady': function(e){
-                            if(topicId){ fetch(`/topics/${topicId}/progress`).then(r=>r.json()).then(data=>{ if(data.progress && data.progress.watched_seconds){ player.seekTo(data.progress.watched_seconds, true); } player.playVideo(); }).catch(()=>{ player.playVideo(); }); }
-                            else { player.playVideo(); }
-                        }}
+
+                // If we have a stream URL attribute already, use it
+                if(streamUrlAttr){
+                    destroyHtml5Player();
+                    createHtml5PlayerAndPlay(streamUrlAttr, topicId);
+                    return;
+                }
+
+                // If placeholder doesn't have stream URL but topic id exists, ask server for it
+                if(topicId){
+                    fetch(`/topics/${topicId}/stream`).then(r=>r.json()).then(data=>{
+                        if(data && data.url){
+                            placeholder.setAttribute('data-stream-url', data.url);
+                            destroyHtml5Player();
+                            createHtml5PlayerAndPlay(data.url, topicId);
+                            return;
+                        }
+                        // fallback to YouTube if present
+                            if(ytId){
+                            // create or load YT player as before (keep legacy support)
+                                // hide placeholder so the iframe is visible
+                                try{ const ph = document.getElementById('video-placeholder'); if(ph) ph.style.display = 'none'; }catch(e){}
+                                if(!player || typeof player.loadVideoById !== 'function'){
+                                player = new YT.Player('player', {
+                                    height: '100%', width: '100%', videoId: ytId,
+                                    playerVars: { rel:0, modestbranding:1 },
+                                    events: { 'onStateChange': onPlayerStateChange, 'onReady': function(e){ player.playVideo(); }}
+                                });
+                            } else { player.loadVideoById(ytId); player.playVideo(); }
+                        }
+                    }).catch(err => {
+                        console.warn('stream lookup failed', err);
+                        if(ytId){
+                            try{ const ph = document.getElementById('video-placeholder'); if(ph) ph.style.display = 'none'; }catch(e){}
+                            if(!player){ player = new YT.Player('player', { height:'100%', width:'100%', videoId: ytId, playerVars:{rel:0,modestbranding:1}, events:{'onStateChange':onPlayerStateChange} }); } else { player.loadVideoById(ytId); }
+                        }
                     });
-                } else {
-                    player.loadVideoById(videoId);
-                    if(topicId){ fetch(`/topics/${topicId}/progress`).then(r=>r.json()).then(data=>{ if(data.progress && data.progress.watched_seconds){ player.seekTo(data.progress.watched_seconds, true); } player.playVideo(); }).catch(()=>{ player.playVideo(); }); }
-                    else { player.playVideo(); }
+                } else if(ytId){
+                    // no topicId but have yt fallback
+                    if(!player || typeof player.loadVideoById !== 'function'){
+                        player = new YT.Player('player', { height:'100%', width:'100%', videoId: ytId, playerVars:{rel:0,modestbranding:1}, events:{'onStateChange':onPlayerStateChange} });
+                    } else { player.loadVideoById(ytId); }
                 }
             });
         }
@@ -368,9 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
         }catch(e){}
 
-        // otherwise auto-click first topic if present
-        const first = document.querySelector('.topic-item[data-video]');
-        if(first) first.click();
+    // otherwise auto-click first topic if present
+    const first = document.querySelector('.topic-item[data-topic-id]');
+    if(first) first.click();
 
         // wire next/back buttons (if present in the partial)
         const btnNext = document.getElementById('btn-next');
@@ -399,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(nxt){ nxt.click(); }
                     // ensure navigation behavior triggers
                     const lessonIdLocal = lessonId || (location.pathname.split('/').filter(Boolean)[1] || null);
-                    navigateTopic(lessonIdLocal, nxt.getAttribute('data-topic-id'), nxt.getAttribute('data-video'), true);
+                    navigateTopic(lessonIdLocal, nxt.getAttribute('data-topic-id'), null, true);
                     setTimeout(updateNavButtons, 50);
                 }
             });
@@ -419,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const prev = topics[idx-1];
                     if(prev){ prev.click(); }
                     const lessonIdLocal = lessonId || (location.pathname.split('/').filter(Boolean)[1] || null);
-                    navigateTopic(lessonIdLocal, prev.getAttribute('data-topic-id'), prev.getAttribute('data-video'), true);
+                    navigateTopic(lessonIdLocal, prev.getAttribute('data-topic-id'), null, true);
                     setTimeout(updateNavButtons, 50);
                 }
             });
@@ -502,11 +560,34 @@ document.addEventListener('DOMContentLoaded', () => {
             // update placeholder and start playback after creating player
             const placeholder = document.getElementById('video-placeholder');
             if(placeholder){
+                // Always set current topic id for the placeholder so the player can request stream metadata
+                if(topicId) placeholder.setAttribute('data-topic-id', topicId);
+
+                // If this is a YouTube link, set video-id and thumbnail
                 const vid = (videoUrl && videoUrl.match(/(youtu\.be\/|v=)([A-Za-z0-9_-]{11})/)) ? videoUrl.match(/(youtu\.be\/|v=)([A-Za-z0-9_-]{11})/)[2] : null;
                 if(vid){
                     placeholder.style.backgroundImage = 'url(https://img.youtube.com/vi/'+vid+'/hqdefault.jpg)';
                     placeholder.setAttribute('data-video-id', vid);
-                    placeholder.setAttribute('data-topic-id', topicId);
+                    // clear any existing stream-url/bunny-guid since this is YouTube
+                    placeholder.removeAttribute('data-stream-url');
+                    placeholder.removeAttribute('data-bunny-guid');
+                } else {
+                    // For non-YouTube topics, set bunny GUID from sidebar item if available
+                    try{
+                        const topicEl = document.querySelector('[data-topic-id="' + topicId + '"]');
+                        if(topicEl){
+                            const bg = topicEl.getAttribute('data-bunny-guid');
+                            if(bg) {
+                                placeholder.setAttribute('data-bunny-guid', bg);
+                            } else {
+                                placeholder.removeAttribute('data-bunny-guid');
+                            }
+                        }
+                        // clear video-id (youtube) if present
+                        placeholder.removeAttribute('data-video-id');
+                        // also clear any previously cached stream-url so it will be fetched fresh
+                        placeholder.removeAttribute('data-stream-url');
+                    }catch(e){}
                 }
             }
             // update displayed title/description using sidebar item text if available
@@ -591,6 +672,9 @@ body, .main-wrapper, .sidebar, .kelas-container { font-family: 'Roboto', sans-se
 .player-wrapper { max-width:1100px; margin:1rem auto; }
 .player-wrapper #player { width:100%; aspect-ratio:16/9; position:relative; border-radius:14px; overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,.6); border:1px solid rgba(255,255,255,0.04); }
 .player-wrapper iframe, .player-wrapper .video-placeholder { position:absolute; top:0; left:0; width:100%; height:100%; }
+/* ensure placeholder is below actual video/iframe */
+.player-wrapper .video-placeholder { z-index:1; }
+.player-wrapper iframe { z-index:3; }
 
 /* Position headline/subheadline aligned with navigation (same vertical offset)
    Keep headline near top and horizontally aligned with main content */

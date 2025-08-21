@@ -36,6 +36,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
         return redirect(route('admin.lessons.index'));
     })->name('dashboard');
     Route::resource('lessons', LessonController::class);
+    // Route to create a signed upload URL for direct-to-Bunny uploads
+    // Temporarily use a closure to avoid calling controller dispatch while debugging
+    Route::post('bunny/upload-url', function (\Illuminate\Http\Request $request) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Direct browser upload endpoint temporarily disabled. Use the server upload endpoint at admin/bunny/upload-server.',
+            'upload_url' => null,
+        ], 501);
+    })->name('bunny.upload-url');
+    Route::post('bunny/upload-server', [App\Http\Controllers\BunnyController::class, 'uploadToBunny'])->name('bunny.upload-server');
+    Route::get('bunny/video-status/{guid}', [App\Http\Controllers\BunnyController::class, 'videoStatus'])->name('bunny.video-status');
     Route::get('lessons/{lesson}/topics/create', [TopicController::class, 'create'])->name('topics.create');
     Route::post('lessons/{lesson}/topics', [TopicController::class, 'store'])->name('topics.store');
     Route::get('lessons/{lesson}/topics/{topic}/edit', [TopicController::class, 'edit'])->name('topics.edit');
@@ -44,9 +55,26 @@ Route::prefix('admin')->name('admin.')->group(function () {
 });
 
 // Topic progress endpoints (authenticated users)
-Route::middleware('auth')->group(function () {
-    Route::post('/topics/{topic}/progress', [App\Http\Controllers\TopicProgressController::class, 'store'])->name('topics.progress.store');
-    Route::get('/topics/{topic}/progress', [App\Http\Controllers\TopicProgressController::class, 'show'])->name('topics.progress.show');
-});
+// Topic progress endpoints removed — progress feature disabled and storage removed.
+
+// Return stream URL for a topic (used by frontend to load private Bunny streams)
+use App\Http\Controllers\BunnyController;
+
+Route::get('/topics/{topic}/stream', function (App\Models\Topic $topic) {
+    // Prefer bunny_guid if present
+    if ($topic->bunny_guid) {
+        $signed = BunnyController::signUrl($topic->bunny_guid, 300);
+        if ($signed) return response()->json(['url' => $signed]);
+        return response()->json(['url' => BunnyController::cdnUrl($topic->bunny_guid)]);
+    }
+
+    // Fallback to legacy video_url for compatibility
+    $path = $topic->video_url ?? null;
+    if (! $path) return response()->json(['url' => null]);
+    if (preg_match('#^https?://#i', $path)) return response()->json(['url' => $path]);
+    $signed = BunnyController::signUrl($path, 300);
+    if ($signed) return response()->json(['url' => $signed]);
+    return response()->json(['url' => BunnyController::cdnUrl($path)]);
+})->name('topics.stream');
 
 

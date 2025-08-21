@@ -17,7 +17,7 @@
             <th>ID</th>
             <th>Lesson</th>
             <th>Title</th>
-            <th>Video URL</th>
+            <th>Video</th>
             <th>Description</th>
             <th>Position</th>
             <th>Created</th>
@@ -30,7 +30,15 @@
             <td>{{ $topic->id }}</td>
             <td>{{ $topic->lesson->title ?? 'N/A' }}</td>
             <td>{{ $topic->title }}</td>
-            <td>{{ $topic->video_url }}</td>
+            <td>
+                @if($topic->bunny_guid)
+                    <a href="{{ route('topics.stream', $topic->id) }}" target="_blank">Bunny: {{ $topic->bunny_guid }}</a>
+                @elseif($topic->video_url)
+                    <a href="{{ $topic->video_url }}" target="_blank">{{ Str::limit($topic->video_url, 40) }}</a>
+                @else
+                    -
+                @endif
+            </td>
             <td>{{ Str::limit($topic->description ?? $topic->content ?? '', 80) }}</td>
             <td>{{ $topic->position ?? '-' }}</td>
             <td>{{ $topic->created_at?->format('Y-m-d') }}</td>

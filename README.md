@@ -59,3 +59,26 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Bunny CDN private streaming setup (project-specific)
+
+This project now supports private Bunny (Bunny.net) streaming for topics. Changes:
+
+- Frontend: uses HTML5 <video> + hls.js to play HLS streams returned by server.
+- Backend: new endpoint GET /topics/{topic}/stream returns JSON { url } where `url` is taken from `topics.video_url` or prefixed with `BUNNY_CDN_HOST` when `topics.video_url` is a path.
+
+Environment variables (add to your .env):
+
+- BUNNY_CDN_HOST=https://guitarcdn.b-cdn.net
+- BUNNY_LIBRARY_ID=483253
+- BUNNY_API_KEY= # optional (for server-side signing implementation)
+- BUNNY_SIGNING_KEY= # optional (for signed URLs)
+
+How it works
+
+1. In admin, save full Bunny HLS or MP4 URL into `topics.video_url`, e.g.:
+	https://guitarcdn.b-cdn.net/483253/videos/abcdef/master.m3u8
+2. When user clicks Play, frontend requests `/topics/{topic}/stream` which returns the URL.
+3. Frontend uses hls.js (or native HLS on iOS) to play the stream. Progress is saved via existing `/topics/{id}/progress` endpoints.
+
+If you want signed URLs for private content, you can place your Bunny API key or signing secret in `.env` and I can implement server-side signing (recommended for production). For now the app expects the URL in `topics.video_url` to be accessible by the client.
