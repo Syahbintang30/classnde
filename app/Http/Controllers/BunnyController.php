@@ -183,6 +183,32 @@ class BunnyController extends Controller
     }
 
     /**
+     * Return a signed thumbnail URL for a Bunny Stream GUID.
+     * This assumes Bunny serves a thumbnail at /{guid}/thumbnail.jpg — adjust if your setup differs.
+     */
+    public static function signThumbnailUrl(string $guid, int $expiresInSeconds = 3600, string $filename = 'thumbnail.jpg'): ?string
+    {
+        $signingKey = env('BUNNY_SIGNING_KEY');
+        $libraryId = env('BUNNY_LIBRARY_ID');
+        $hostname = env('BUNNY_STREAM_HOSTNAME', 'video.b-cdn.net');
+        // Allow filename from metadata (thumbnailFileName) or default
+        $baseUrl = "https://{$hostname}/{$guid}/{$filename}";
+
+        if (! $signingKey) {
+            return $baseUrl;
+        }
+
+        $expirationTimestamp = time() + $expiresInSeconds;
+        $hashableString = $libraryId . $signingKey . $expirationTimestamp . $guid;
+        $signature = hash('sha256', $hashableString, true);
+        $token = base64_encode($signature);
+        $token = strtr($token, '+/', '-_');
+        $token = rtrim($token, '=');
+
+        return "{$baseUrl}?token={$token}&expires={$expirationTimestamp}";
+    }
+
+    /**
      * Route wrapper: create upload URL for client-side upload.
      * NOTE: current implementation does not provide a direct-to-storage signed URL.
      * For now return a clear message and suggest using server-side upload.

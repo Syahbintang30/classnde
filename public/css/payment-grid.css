@@ -1,0 +1,62 @@
+/* Responsive Payment Grid Styles */
+.payment-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.payment-option {
+  border: 2px solid #222;
+  border-radius: 0.75rem;
+  padding: 0rem; /* larger hit area */
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #181818;
+  display: block;
+}
+.payment-option.selected,
+.payment-option input:checked + .payment-option-visual {
+  border-color: #ffffff;
+  box-shadow: 0 0 8px #2563eb44;
+}
+.payment-option-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.payment-logo {
+  width: 100px; /* larger icon */
+  height: 100px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+.payment-name {
+  font-size: 1rem;
+  color: #fff;
+  font-weight: 500;
+  text-align: center;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+@media (max-width: 600px) {
+  .payment-grid-container {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+  .payment-option {
+    padding: 1rem;
+  }
+  .payment-logo {
+    width: 64px; /* larger icon on mobile */
+    height: 64px;
+  }
+}

@@ -7,6 +7,8 @@ use App\Http\Controllers\BunnyController;
 use App\Models\Lesson;
 use App\Models\Topic;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class TopicController extends Controller
 {
@@ -25,7 +27,6 @@ class TopicController extends Controller
         ]);
 
         $data = $request->only(['title', 'bunny_guid', 'description', 'position']);
-
     // If admin provided a Bunny GUID, keep it; playback URL will be derived at read-time.
     // Do NOT write a `video_url` column because it may have been removed.
 
@@ -49,7 +50,6 @@ class TopicController extends Controller
         ]);
 
         $data = $request->only(['title', 'bunny_guid', 'description', 'position']);
-
     // Do not write video_url; frontend will resolve playback URL from bunny_guid.
     $topic->update($data);
 
@@ -61,4 +61,6 @@ class TopicController extends Controller
         $topic->delete();
         return redirect()->route('admin.lessons.show', $lesson->id)->with('success', 'Topik berhasil dihapus.');
     }
+
+    // ...existing code...
 }

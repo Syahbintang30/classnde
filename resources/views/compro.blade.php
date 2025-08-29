@@ -34,8 +34,9 @@
                             <li><a class="scroll list-inline-item" href="#wrapper">Home</a></li>
                             <li><a class="scroll list-inline-item" href="#about">About</a></li>
                             <li><a class="scroll list-inline-item" href="#discography">Partnerships</a></li>
-                            <li><a class="scroll list-inline-item" href="#dashboard">Exposure</a></li>
+                            <li><a class="scroll list-inline-item" href="#registerclass">Exposure</a></li>
                             <li><a class="scroll list-inline-item" href="#contact">Contact</a></li>
+                            <li><a class="list-inline-item" href="{{ url('/registerclass') }}">Courses</a></li>
                         </ul>
                     </nav>
                 </div>
@@ -310,8 +311,8 @@
         </div>
     </section>
 
-    <!-- Dashboard Section -->
-    <section id="dashboard" class="custom-dashboard-section py-5">
+    <!-- Registerclass Section -->
+    <section id="registerclass" class="custom-dashboard-section py-5">
         <div class="container">
             <h2 class="text-center mb-5 fw-bold">Tiktok Audience Insights</h2>
 
@@ -363,7 +364,7 @@
         </div>
             
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
-    <a class="btn btn-primary with-ico" href="{{ route('kelas') }}">
+    <a class="btn btn-primary with-ico" href="{{ route('registerclass') }}">
         <i class="icon-user"></i> Work with Me
     </a>
 </div>

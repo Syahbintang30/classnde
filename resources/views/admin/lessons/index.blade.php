@@ -12,6 +12,7 @@
         <thead>
             <tr>
                 <th>Judul</th>
+                <th>Type</th>
                 <th>Aksi</th>
             </tr>
         </thead>
@@ -19,6 +20,7 @@
             @forelse($lessons as $lesson)
                 <tr>
                     <td>{{ $lesson->title }}</td>
+                    <td>{{ $lesson->type ?? 'course' }}</td>
                     <td>
                         <a href="{{ route('admin.lessons.show', $lesson->id) }}" class="btn btn-info btn-sm">Detail</a>
                         <a href="{{ route('admin.lessons.edit', $lesson->id) }}" class="btn btn-warning btn-sm">Edit</a>

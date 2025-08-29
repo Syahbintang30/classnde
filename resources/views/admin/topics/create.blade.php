@@ -19,6 +19,7 @@
         <label>Description</label>
         <textarea name="description" class="form-control"></textarea>
     </div>
+    <!-- Thumbnail input removed: thumbnails are no longer stored in DB. Use Bunny GUID for thumbnails. -->
     <div class="mb-3">
         <label>Position</label>
         <input type="number" name="position" class="form-control" value="0">
@@ -31,4 +32,4 @@
 @section('scripts')
 <!-- No client-side upload flow: admins should upload in Bunny and paste GUID here -->
 @endsection
-@endsection
+

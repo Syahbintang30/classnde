@@ -27,7 +27,11 @@ class LessonController extends Controller
             'position' => 'nullable|integer',
         ]);
 
-        Lesson::create($request->only(['title', 'position']));
+        $request->validate([
+            'type' => 'nullable|string|in:course,song',
+        ]);
+
+        Lesson::create($request->only(['title', 'position', 'type']));
 
         return redirect()->route('admin.lessons.index')->with('success', 'Lesson berhasil ditambahkan.');
     }
@@ -50,7 +54,11 @@ class LessonController extends Controller
             'position' => 'nullable|integer',
         ]);
 
-        $lesson->update($request->only(['title', 'position']));
+        $request->validate([
+            'type' => 'nullable|string|in:course,song',
+        ]);
+
+        $lesson->update($request->only(['title', 'position', 'type']));
 
         return redirect()->route('admin.lessons.index')->with('success', 'Lesson berhasil diperbarui.');
     }

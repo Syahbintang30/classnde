@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'api_key_sid' => env('TWILIO_API_KEY_SID'),
+        'api_key_secret' => env('TWILIO_API_KEY_SECRET'),
+        'service_sid' => env('TWILIO_SERVICE_SID'),
+    ],
+
+    'midtrans' => [
+        'server_key' => env('MIDTRANS_SERVER_KEY'),
+        'client_key' => env('MIDTRANS_CLIENT_KEY'),
+    'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+    'merchant_id' => env('MIDTRANS_MERCHANT_ID', null),
+    ],
+
 ];

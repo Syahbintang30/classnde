@@ -1436,11 +1436,11 @@ ol.playlist .col-lg-6 a {
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); /* Lighter shadow on hover */
 }
 
-/* Dashboard Container */
-#dashboard.dashboard-insight-section {
-  background-color: #1a1a1a; /* Darker background for the dashboard */
-  padding: 60px 20px;
-  color: #ffffff; /* Change text color to white */
+/* Registerclass Container */
+#registerclass.dashboard-insight-section {
+	background-color: #1a1a1a; /* Darker background for the registerclass section */
+	padding: 60px 20px;
+	color: #ffffff; /* Change text color to white */
 }
 
 /* Header */
@@ -1478,6 +1478,12 @@ ol.playlist .col-lg-6 a {
 
 .dashboard-insight-card:hover {
   transform: translateY(-5px);
+}
+
+/* Chart class rename */
+.registerclass-chart {
+	width: 100% !important;
+	height: auto !important;
 }
 
 .dashboard-insight-card h2 {

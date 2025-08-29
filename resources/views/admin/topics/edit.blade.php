@@ -20,6 +20,11 @@
         <textarea name="description" class="form-control">{{ $topic->description }}</textarea>
     </div>
     <div class="mb-3">
+        <label>Thumbnail (opsional)</label>
+    <!-- Thumbnail preview removed: thumbnails are no longer stored in DB -->
+        <!-- Thumbnail field removed: thumbnails are no longer stored in DB; use bunny_guid for thumbnails if available -->
+    </div>
+    <div class="mb-3">
         <label>Position</label>
         <input type="number" name="position" value="{{ $topic->position ?? 0 }}" class="form-control">
     </div>

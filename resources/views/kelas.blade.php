@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Kelas Guitar')
+@section('title', ' Kelas Guitar')
 
 @section('content')
 <div class="kelas-container" style="display: flex;">
     <!-- Sidebar -->
     <aside class="sidebar" style="width: 250px; border-right:1px solid #ccc; padding:1rem;">
     <div class="logo-container" style="margin-bottom:1rem; display:flex; align-items:center; justify-content:center;">
-            <a href="{{ route('kelas') }}">
+            <a href="{{ route('registerclass') }}">
                 <img src="{{ asset('compro/img/ndelogo.png') }}" class="nav-home-btn" alt="Nde Logo">
             </a>
         </div>
@@ -47,22 +47,7 @@
 
     <!-- Main Content -->
     <div class="main-wrapper" style="flex:1; padding:1rem;">
-        <!-- Navbar -->
-        <!-- Navbar -->
-    <header class="navbar">
-        <div class="nav-left">
-            <button class="burger" onclick="toggleSidebar()">☰</button>
-            <a href="{{ route('kelas') }}" class="nav-home-btn">
-                <i class="ph-bold ph-house-simple nav-icon"></i>
-                <span>Home</span>
-            </a>
-        </div>
-        <div class="nav-right">
-            <a href="{{ route('kelas') }}">Lessons</a>
-            <a href="#">Coaching</a>
-            <a href="#">Song Tutorial</a>
-        </div>
-    </header>
+    <!-- local navbar removed to use global navbar from layouts.app -->
 
 
         <!-- Topik Content -->
@@ -642,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/kelas.css') }}">
-<!-- Poppins font for buttons -->
+<!-- Poppins font for buttons (kept) -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 .kelas-container { display:flex; }
@@ -656,7 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
 .topic-item.completed { color: #9fd19f; }
 
 /* Use Roboto font for page */
-body, .main-wrapper, .sidebar, .kelas-container { font-family: 'Roboto', sans-serif; }
+body, .main-wrapper, .sidebar, .kelas-container { font-family: 'Inter', 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
 
 /* Video placeholder & play button */
 .video-placeholder { background-size: cover; background-position: center; position:relative; display:flex; align-items:center; justify-content:center; }
@@ -712,7 +697,7 @@ body, .main-wrapper, .sidebar, .kelas-container { font-family: 'Roboto', sans-se
 /* Stylish Next/Back buttons */
 .video-controls { display:flex; gap:12px; justify-content:center; margin-top:12px; }
 .video-nav-btn {
-    font-family: 'Poppins', 'Roboto', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    font-family: 'Poppins', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     display:inline-flex; align-items:center; gap:10px;
     font-weight:700; font-size:16px; padding:12px 20px; border-radius:12px; border:0; cursor:pointer;
     transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, color .12s ease;

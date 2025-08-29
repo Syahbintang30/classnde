@@ -14,6 +14,13 @@
         <label>Position (urutan)</label>
         <input type="number" name="position" value="{{ $lesson->position ?? 0 }}" class="form-control">
     </div>
+    <div class="mb-3">
+        <label>Type</label>
+        <select name="type" class="form-control">
+            <option value="course" {{ ($lesson->type ?? 'course') === 'course' ? 'selected' : '' }}>Course</option>
+            <option value="song" {{ ($lesson->type ?? '') === 'song' ? 'selected' : '' }}>Song</option>
+        </select>
+    </div>
     
     <button class="btn btn-primary">Update</button>
     <a href="{{ route('admin.lessons.index') }}" class="btn btn-secondary">Kembali</a>

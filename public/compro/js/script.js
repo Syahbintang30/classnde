@@ -17,8 +17,15 @@
     // Site navigation setup
 
     var header = $('.header'),
-        pos = header.offset(),
-        blockTop = $('.block-top');
+        blockTop = $('.block-top'),
+        nav = $('.main-nav');
+
+    // defensive: if header is not present offset() may be undefined and cause pos.top to throw
+    var pos = { top: 0 };
+    if (header && header.length) {
+        var _off = header.offset();
+        if (_off && typeof _off.top !== 'undefined') pos = _off;
+    }
 
     $(window).scroll(function() {
         if ($(this).scrollTop() > pos.top + 100 && header.hasClass('stopping')) {
@@ -104,22 +111,34 @@
 
 
     // Track list player 
-
+    // defensive: audiojs may not be included on every page; provide a no-op stub so other scripts
+    // can call audio.load/play without throwing ReferenceError.
     var playlist = $('.album');
-    var a = audiojs.create(playlist, {
-        trackEnded: function() {
-            var next = $('.playlist li.playing').next();
-            if (!next.length) next = $('.playlist li').first();
-            next.addClass('playing').siblings().removeClass('playing');
-            audio1.load($('.as-link', next).attr('data-src'));
-            audio1.play();
-        }
-    });
+    var a = null;
+    var audio = {
+        load: function() {},
+        play: function() {},
+        playPause: function() {}
+    };
 
-    var audio = a[0];
-    var first = $('.playlist li .as-link').attr('data-src');
-    $('.playlist li ').first().addClass('pause');
-    audio.load(first);
+    if (typeof audiojs !== 'undefined' && audiojs && playlist.length) {
+        a = audiojs.create(playlist, {
+            trackEnded: function() {
+                var next = $('.playlist li.playing').next();
+                if (!next.length) next = $('.playlist li').first();
+                next.addClass('playing').siblings().removeClass('playing');
+                if (typeof audio1 !== 'undefined' && audio1 && typeof audio1.load === 'function') {
+                    audio1.load($('.as-link', next).attr('data-src'));
+                    audio1.play();
+                }
+            }
+        });
+
+        audio = a[0];
+        var first = $('.playlist li .as-link').attr('data-src');
+        $('.playlist li ').first().addClass('pause');
+        if (audio && typeof audio.load === 'function') audio.load(first);
+    }
 
 
 
@@ -147,12 +166,15 @@
     });
 
 
-    $('.btn').on('click', function() {
-         var href = $(this).attr('href');
+    // Only treat anchor elements with an href as navigation buttons.
+    // Prevents buttons (like form submit buttons) with class "btn" from
+    // attempting to navigate to an undefined href which causes /undefined.
+    $('a.btn').on('click', function(e) {
+        var href = $(this).attr('href');
+        if (!href) return true; // allow default behavior if no href present
         window.location.href = href;
-         
+        e.preventDefault();
         return false;
-
     });
 
 

@@ -17,6 +17,7 @@
             <th>ID</th>
             <th>Lesson</th>
             <th>Title</th>
+            <!-- Thumbnail column removed -->
             <th>Video</th>
             <th>Description</th>
             <th>Position</th>
@@ -26,7 +27,7 @@
     </thead>
     <tbody>
         @forelse($topics as $topic)
-        <tr>
+            <td>
             <td>{{ $topic->id }}</td>
             <td>{{ $topic->lesson->title ?? 'N/A' }}</td>
             <td>{{ $topic->title }}</td>

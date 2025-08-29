@@ -21,7 +21,31 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+    'phone',
+    'package_id',
+    'referral_code',
+    'referred_by',
     ];
+
+    public function package()
+    {
+        return $this->belongsTo(\App\Models\Package::class);
+    }
+
+    public function referredBy()
+    {
+        return $this->belongsTo(self::class, 'referred_by');
+    }
+
+    public function referrals()
+    {
+        return $this->hasMany(self::class, 'referred_by');
+    }
+
+    public function coachingTickets()
+    {
+        return $this->hasMany(\App\Models\CoachingTicket::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -43,6 +67,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 }

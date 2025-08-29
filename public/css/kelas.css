@@ -2,7 +2,7 @@
 body {
     margin: 0;
     background: #000;
-    font-family: Arial, sans-serif;
+    font-family: Inter, Arial, sans-serif;
     color: #fff;
 }
 
@@ -193,10 +193,7 @@ video {
 }
 
 /* --- Kelas specific enhancements --- */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400&display=swap');
-body {
-    font-family: 'Roboto', sans-serif;
-}
+/* --- Kelas specific enhancements --- */
 
 /* Lesson / Topic navigation styles */
 .lesson-block { position: relative; margin-bottom: 12px; }

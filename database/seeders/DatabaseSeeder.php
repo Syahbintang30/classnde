@@ -22,5 +22,11 @@ class DatabaseSeeder extends Seeder
 
     // seed lessons & topics
     $this->call(\Database\Seeders\LessonTopicSeeder::class);
+    // seed song tutorial example
+    $this->call(\Database\Seeders\SongTutorialSeeder::class);
+    // seed coaching tickets
+    $this->call(\Database\Seeders\CoachingTicketSeeder::class);
+    // seed packages (beginner/intermediate)
+    $this->call(\Database\Seeders\PackageSeeder::class);
     }
 }
