@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\admin\LessonController;
-use App\Http\Controllers\admin\PackageController;
+use App\Http\Controllers\Admin\LessonController;
+use App\Http\Controllers\Admin\PackageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\Admin\TopicController;
@@ -64,6 +64,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('packages', [PackageController::class, 'store'])->name('packages.store');
     Route::get('packages/{package}/edit', [PackageController::class, 'edit'])->name('packages.edit');
     Route::put('packages/{package}', [PackageController::class, 'update'])->name('packages.update');
+    Route::delete('packages/{package}', [PackageController::class, 'destroy'])->name('packages.destroy');
     // Route to create a signed upload URL for direct-to-Bunny uploads
     // Temporarily use a closure to avoid calling controller dispatch while debugging
     Route::post('bunny/upload-url', function (\Illuminate\Http\Request $request) {

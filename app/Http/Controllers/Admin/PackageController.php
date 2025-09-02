@@ -53,4 +53,10 @@ class PackageController extends Controller
 
         return redirect()->route('admin.packages.index')->with('status', 'Package updated');
     }
+    
+    public function destroy(Package $package)
+    {
+        $package->delete();
+        return redirect()->route('admin.packages.index')->with('success','package deleted');
+    }
 }
