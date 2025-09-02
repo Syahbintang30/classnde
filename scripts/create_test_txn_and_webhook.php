@@ -19,7 +19,6 @@ $externalOrderId = 'test-'.time().'-'.Str::random(6);
 $txn = Transaction::create([
     'order_id' => $externalOrderId,
     'user_id' => $user->id,
-    'lesson_id' => null,
     'package_id' => $package->id,
     'method' => 'gopay',
     'amount' => 10000,

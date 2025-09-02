@@ -93,7 +93,7 @@
                                             <div>{{ $paymentInfo['order'] }}</div>
                                             <div class="text-muted" style="font-size:13px">Rp {{ number_format($paymentInfo['amount'] ?? 0,0,',','.') }}</div>
                                             <div class="mt-1">
-                                                <a class="btn btn-sm btn-outline-primary" href="{{ route('transactions.index') }}?q={{ $paymentInfo['order'] }}">View Transaction</a>
+                                                <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.transactions.index') }}?q={{ $paymentInfo['order'] }}">View Transaction</a>
                                             </div>
                                         @elseif(isset($paymentInfo['order']))
                                             {{ $paymentInfo['order'] }}

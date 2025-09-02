@@ -86,24 +86,73 @@
                         </div>
                     </div>
                 @else
-                    <div style="margin:24px auto 26px auto;max-width:640px;text-align:left;padding:18px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);">
-                        <h3 style="margin-top:0;margin-bottom:8px">Your Package: {{ $package->name }}</h3>
-                        <div style="font-size:14px;opacity:0.85;margin-bottom:10px">Benefits:</div>
-                        <div style="font-size:13px;opacity:0.9">
-                            @if(!empty($package->benefits))
-                                @php $lines = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $package->benefits))); @endphp
-                                @if(count($lines))
-                                    <ul style="margin:0 0 0 18px;padding:0;">
-                                        @foreach($lines as $line)
-                                            <li style="margin-bottom:6px">{{ $line }}</li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                            @else
-                                <div style="opacity:0.8">One coaching ticket to book a session.</div>
-                            @endif
-                        </div>
-                    </div>
+                        {{-- Special handling for upgrade-intermediate: display intermediate benefits to the user so they know what they upgraded to --}}
+                        @if(isset($package->slug) && $package->slug === 'upgrade-intermediate')
+                            @php
+                                $intermediatePkg = \App\Models\Package::where('slug','intermediate')->first();
+                            @endphp
+                            <div role="region" aria-labelledby="thankyou-head" class="thankyou-card">
+                                <h1 id="thankyou-head" class="thankyou-head">Upgrade Complete — Welcome to Intermediate</h1>
+                                <p class="thankyou-sub">You upgraded from <strong>Beginner</strong> to <strong>Intermediate</strong>. Below are the benefits included with the Intermediate package.</p>
+
+                                <div class="purchase-summary">
+                                    <div class="purchase-line"><strong>Item Purchased:</strong> Upgrade Intermediate</div>
+                                    <div class="purchase-line" style="margin-top:6px;"><strong>Access:</strong> Lifetime access to Intermediate course materials.</div>
+                                </div>
+
+                                <div style="margin-top:12px;text-align:left;max-width:680px;margin-left:auto;margin-right:auto;">
+                                    <div style="font-size:14px;opacity:0.85;margin-bottom:8px">Benefits of Intermediate:</div>
+                                    <div style="font-size:13px;opacity:0.95">
+                                        @if($intermediatePkg && !empty($intermediatePkg->benefits))
+                                            @php $lines = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $intermediatePkg->benefits))); @endphp
+                                            @if(count($lines))
+                                                <ul style="margin:0 0 0 18px;padding:0;">
+                                                    @foreach($lines as $line)
+                                                        <li style="margin-bottom:6px">{{ $line }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            @endif
+                                        @else
+                                            {{-- fallback static benefits if intermediate benefits not defined --}}
+                                            <ul style="margin:0 0 0 18px;padding:0;">
+                                                <li>Master barre chords and chord variations.</li>
+                                                <li>Learn the basics of fingerstyle playing.</li>
+                                                <li>Use scales for improvisation.</li>
+                                                <li>Rhythm and syncopation.</li>
+                                                <li>Perform songs with your own interpretation.</li>
+                                            </ul>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="cta-wrap">
+                                    @if(isset($lesson) && $lesson)
+                                        <a href="{{ route('kelas.show', $lesson->id) }}" class="thankyou-cta">Start Learning Intermediate</a>
+                                    @else
+                                        <a href="{{ route('registerclass') }}" class="thankyou-cta">Start Learning Intermediate</a>
+                                    @endif
+                                </div>
+                            </div>
+                        @else
+                            <div style="margin:24px auto 26px auto;max-width:640px;text-align:left;padding:18px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);">
+                                <h3 style="margin-top:0;margin-bottom:8px">Your Package: {{ $package->name }}</h3>
+                                <div style="font-size:14px;opacity:0.85;margin-bottom:10px">Benefits:</div>
+                                <div style="font-size:13px;opacity:0.9">
+                                    @if(!empty($package->benefits))
+                                        @php $lines = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $package->benefits))); @endphp
+                                        @if(count($lines))
+                                            <ul style="margin:0 0 0 18px;padding:0;">
+                                                @foreach($lines as $line)
+                                                    <li style="margin-bottom:6px">{{ $line }}</li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
+                                    @else
+                                        <div style="opacity:0.8">One coaching ticket to book a session.</div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                 @endif
             @else
                 <div style="margin:24px auto 26px auto;max-width:640px;text-align:left;padding:18px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);">

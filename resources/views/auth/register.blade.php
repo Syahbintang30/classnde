@@ -9,8 +9,23 @@
             <h2 style="margin:0 0 8px 0;font-size:22px">Create account</h2>
             <p style="opacity:0.7;margin-bottom:16px">Sign up to access lessons and booking features.</p>
 
-            <form method="POST" action="{{ route('register') }}">
+            <form method="POST" action="{{ route('register') }}" id="registerForm">
                 @csrf
+                {{-- Alert area: show validation errors and helpful guidance --}}
+                @if(session('status'))
+                    <div style="background:#0b2f0b;padding:10px;border-radius:6px;margin-bottom:12px;color:#b6f2b6">{{ session('status') }}</div>
+                @endif
+                @if($errors->any())
+                    <div style="background:#2b0b0b;padding:12px;border-radius:8px;margin-bottom:12px;color:#ffd9d9">
+                        <strong>Registration issues:</strong>
+                        <ul style="margin-top:8px;padding-left:18px">
+                            @foreach($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                        <div style="margin-top:8px;font-size:13px;opacity:0.9">Common causes: email already registered, passwords don't match, or password does not meet complexity requirements.</div>
+                    </div>
+                @endif
                 <div style="margin-bottom:12px">
                     <label style="display:block;margin-bottom:6px">Name</label>
                     <input name="name" type="text" value="{{ old('name') }}" required style="width:100%;padding:12px;border-radius:6px;background:transparent;border:1px solid #333;color:#fff;" />
@@ -19,7 +34,7 @@
 
                 <div style="margin-bottom:12px">
                     <label style="display:block;margin-bottom:6px">Email</label>
-                    <input name="email" type="email" value="{{ old('email') }}" required style="width:100%;padding:12px;border-radius:6px;background:transparent;border:1px solid #333;color:#fff;" />
+                    <input id="email" name="email" type="email" value="{{ old('email') }}" required style="width:100%;padding:12px;border-radius:6px;background:transparent;border:1px solid #333;color:#fff;" />
                     @error('email')<div style="color:#ff6b6b;margin-top:6px">{{ $message }}</div>@enderror
                 </div>
 
@@ -33,6 +48,9 @@
                             </button>
                         </div>
                         @error('password')<div style="color:#ff6b6b;margin-top:6px">{{ $message }}</div>@enderror
+                        <div id="passwordHelp" style="margin-top:8px;font-size:13px;opacity:0.85">
+                            Password must be at least 8 characters and include a mix of letters and numbers.
+                        </div>
                     </div>
                     <div style="flex:1">
                         <label style="display:block;margin-bottom:6px">Confirm</label>
@@ -75,6 +93,46 @@
                         btn.innerHTML = eye;
                     }
                 });
+                // Client-side password confirmation and basic strength feedback
+                (function(){
+                    var form = document.getElementById('registerForm');
+                    if(!form) return;
+                    var pwd = form.querySelector('input[name=password]');
+                    var confirm = form.querySelector('input[name=password_confirmation]');
+                    var help = document.getElementById('passwordHelp');
+
+                    function scorePassword(p){
+                        var score = 0;
+                        if(!p) return 0;
+                        if(p.length >= 8) score += 1;
+                        if(/[A-Z]/.test(p)) score += 1;
+                        if(/[0-9]/.test(p)) score += 1;
+                        if(/[^A-Za-z0-9]/.test(p)) score += 1;
+                        return score;
+                    }
+
+                    function updateHelp(){
+                        if(!pwd) return;
+                        var s = scorePassword(pwd.value);
+                        var text = 'Password must be at least 8 characters.';
+                        if(s <= 1) { help.style.color = '#ffd3d3'; help.textContent = text + ' (too weak)'; }
+                        else if(s === 2) { help.style.color = '#ffe7c4'; help.textContent = 'Fair — consider adding numbers or symbols.'; }
+                        else if(s >= 3) { help.style.color = '#c9f7d6'; help.textContent = 'Good password.'; }
+                    }
+
+                    pwd && pwd.addEventListener('input', updateHelp);
+
+                    form.addEventListener('submit', function(e){
+                        if(pwd && confirm && pwd.value !== confirm.value){
+                            e.preventDefault();
+                            alert('Passwords do not match. Please confirm your password correctly.');
+                            confirm.focus();
+                            return false;
+                        }
+                        // basic client-side email duplicate hint: if email value looks like existing (server-side enforced)
+                        return true;
+                    });
+                })();
             </script>
 
         </div>

@@ -9,7 +9,7 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h3 class="card-title mb-3 text-dark">Edit Package</h3>
-                    <form method="POST" action="{{ route('admin.packages.update', $package->id) }}">
+                    <form method="POST" action="{{ route('admin.packages.update', $package->id) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -37,6 +37,15 @@
                             <label class="form-label text-dark">Benefits (one per line)</label>
                             <textarea name="benefits" class="form-control" rows="5" placeholder="Write each benefit on its own line">{{ old('benefits', $package->benefits) }}</textarea>
                             <div class="form-text">Benefits will be shown as a list on the class cards. Use one benefit per line.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-dark">Image (optional)</label>
+                            @if(!empty($package->image))
+                                <div class="mb-2"><img src="{{ asset('storage/'.$package->image) }}" alt="{{ $package->name }}" style="height:96px;object-fit:cover;border-radius:6px"></div>
+                            @endif
+                            <input type="file" name="image" accept="image/*" class="form-control" />
+                            <div class="form-text">Upload a new image to replace the existing one. Max 2MB.</div>
                         </div>
 
                         <div class="text-end">

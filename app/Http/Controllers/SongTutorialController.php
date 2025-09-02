@@ -100,12 +100,24 @@ class SongTutorialController extends Controller
     private function userIsIntermediate($user)
     {
         if (! $user) return false;
+        // numeric id fallback historically used for intermediate
         if ($user->package_id && $user->package_id == 2) return true;
-        // fallback: check package slug if present
+        // fallback: check package slug if present (intermediate or upgrade-intermediate)
         if ($user->package_id) {
             $pkg = \App\Models\Package::find($user->package_id);
-            if ($pkg && isset($pkg->slug) && $pkg->slug === 'intermediate') return true;
+            if ($pkg && isset($pkg->slug) && in_array($pkg->slug, ['intermediate','upgrade-intermediate'])) return true;
         }
+
+        // Check historical purchases: user_packages might contain intermediate or upgrade-intermediate
+        try {
+            $exists = \App\Models\UserPackage::where('user_id', $user->id)
+                ->whereHas('package', function($q){ $q->whereIn('slug', ['intermediate','upgrade-intermediate']); })
+                ->exists();
+            if ($exists) return true;
+        } catch (\Throwable $e) {
+            // ignore DB errors and default to false
+        }
+
         return false;
     }
 }

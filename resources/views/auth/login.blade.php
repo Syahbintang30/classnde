@@ -10,8 +10,26 @@
                 <h1>Welcome back</h1>
                 <p class="muted">Sign in to access your classes and coaching sessions.</p>
 
+                {{-- Consolidated alerts: success, error, and validation list --}}
                 @if(session('status'))
-                    <div class="alert">{{ session('status') }}</div>
+                    <div class="alert success">{{ session('status') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="alert error">{{ session('error') }}</div>
+                @endif
+
+                @if($errors->any())
+                    <div class="alert error">
+                        <strong>Login failed — please check the following:</strong>
+                        <ul style="margin-top:8px;padding-left:18px">
+                            @foreach($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                        <div style="margin-top:10px;font-size:13px;opacity:0.85">
+                            Possible reasons: incorrect password, unregistered email, or too many failed attempts. If you forgot your password, use the <a href="{{ route('password.request') }}" style="color:#fff;text-decoration:underline">password reset</a> link.
+                        </div>
+                    </div>
                 @endif
 
                 <form method="POST" action="{{ route('login') }}" class="login-form">

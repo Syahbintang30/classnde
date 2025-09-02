@@ -9,7 +9,16 @@ class Transaction extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id','user_id','lesson_id','package_id','method','amount','status','midtrans_response','original_amount','referral_code','referrer_user_id'];
+    protected $fillable = ['order_id','user_id','package_id','method','amount','status','midtrans_response','original_amount','referral_code','referrer_user_id'];
+
+    /**
+     * Cast json/amount fields to native types so arrays are stored correctly
+     */
+    protected $casts = [
+        'midtrans_response' => 'array',
+        'amount' => 'decimal:2',
+        'original_amount' => 'decimal:2',
+    ];
 
 
     // relations

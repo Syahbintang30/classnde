@@ -41,6 +41,7 @@ class ProfileController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'password' => 'nullable|string|min:8|confirmed',
+            'photo' => 'nullable|image|max:4096',
         ]);
 
         $user->name = $data['name'];
@@ -51,10 +52,36 @@ class ProfileController extends Controller
         if (! empty($data['password'])) {
             $user->password = Hash::make($data['password']);
         }
-        $user->save();
 
-        // The Blade partial checks session('status') === 'profile-updated'
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        // Handle profile photo upload
+            // If user requested to remove photo
+            if ($request->has('remove_photo')) {
+                if ($user->photo && ! preg_match('#^https?://#i', $user->photo)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($user->photo);
+                }
+                $user->photo = null;
+                $user->save();
+                return Redirect::route('profile.edit')->with('status', 'profile-updated')->with('success', 'Profile photo removed.');
+            }
+
+            if ($request->hasFile('photo')) {
+            try {
+                $file = $request->file('photo');
+                $path = $file->store('user_photos', 'public');
+                // delete old photo if present and not an external URL
+                if ($user->photo && ! preg_match('#^https?://#i', $user->photo)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($user->photo);
+                }
+                $user->photo = $path;
+            } catch (\Throwable $e) {
+                // log and continue (validation already checks file type/size)
+                logger()->error('Failed saving profile photo: ' . $e->getMessage());
+            }
+        }
+            $user->save();
+
+            // The Blade partial checks session('status') === 'profile-updated'
+            return Redirect::route('profile.edit')->with('status', 'profile-updated')->with('success', 'Profile updated.');
     }
 
     /**
@@ -84,5 +111,31 @@ class ProfileController extends Controller
         $user = $request->user();
         $referred = \App\Models\User::where('referred_by', $user->id)->orderByDesc('id')->get();
         return view('profile.referrals', compact('user', 'referred'));
+    }
+
+    /**
+     * Delete the user's account after confirming password.
+     */
+    public function destroy(Request $request)
+    {
+        $user = $request->user();
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'password' => ['required','current_password'],
+        ]);
+
+        if ($validator->fails()) {
+            // Use error bag name 'userDeletion' to match tests expectations
+            return redirect()->route('profile')->withInput()->withErrors($validator->errors(), 'userDeletion');
+        }
+
+        // Delete and logout
+        Auth::logout();
+        $user->delete();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
     }
 }

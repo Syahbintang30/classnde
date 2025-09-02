@@ -81,9 +81,12 @@
             <div class="nav-wrap">
                 <div class="nav-inner">
                     <div style="display:flex;align-items:center;gap:16px">
-                        <a href="{{ route('registerclass') }}" aria-label="NDE Home" style="display:inline-flex;align-items:center;">
-                            <img class="nav-logo" src="{{ asset('compro/img/ndelogo.png') }}" alt="NDE logo" />
-                        </a>
+                        {{-- hide the center navbar logo on kelas pages only (sidebar logo remains) --}}
+                        @if(! request()->is('kelas*') && ! request()->routeIs('kelas.*'))
+                            <a href="{{ url('/ndeofficial') }}" aria-label="NDE Home" style="display:inline-flex;align-items:center;">
+                                <img class="nav-logo" src="{{ asset('compro/img/ndelogo.png') }}" alt="NDE logo" />
+                            </a>
+                        @endif
                         <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav" aria-label="Open menu"> 
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M4 7H20M4 12H20M4 17H20" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -109,27 +112,47 @@
                                 if ($u && $u->package_id && $u->package_id == 2) {
                                     $showSongTutorial = true;
                                 }
+                                // Also allow users who have an intermediate or upgrade-intermediate package slug
+                                try {
+                                    if (! $showSongTutorial) {
+                                        $pkg = \App\Models\Package::find($u->package_id);
+                                        if ($pkg && in_array($pkg->slug, ['intermediate','upgrade-intermediate'])) {
+                                            $showSongTutorial = true;
+                                        }
+                                    }
+                                } catch (\Throwable $e) {
+                                    // ignore lookup failures in the nav
+                                }
                             }
                         @endphp
 
                         <a href="http://127.0.0.1:8000/ndeofficial" class="{{ request()->is('ndeofficial*') ? 'active' : '' }}">Home</a>
                         <a href="{{ route('registerclass') }}" class="{{ request()->routeIs('registerclass') ? 'active' : '' }}">Courses</a>
-                        @if($firstLessonId)
-                            <a href="{{ route('kelas.show', $firstLessonId) }}" class="{{ request()->routeIs('kelas.show') ? 'active' : '' }}">Lesson</a>
-                        @else
-                            <a href="{{ route('registerclass') }}">Lesson</a>
-                        @endif
-                        <a href="{{ $coachingLink }}" class="{{ request()->routeIs('coaching.*') ? 'active' : '' }}">Coaching</a>
-                        @if($showSongTutorial)
-                            <a href="{{ route('song.tutorial.index') }}" class="{{ request()->routeIs('song.tutorial.index') ? 'active' : '' }}">Song Tutorial</a>
-                        @endif
+
+                        {{-- Only show lesson/coaching/song tutorial links to authenticated users --}}
+                        @auth
+                            @if($firstLessonId)
+                                <a href="{{ route('kelas.show', $firstLessonId) }}" class="{{ request()->routeIs('kelas.show') ? 'active' : '' }}">Lesson</a>
+                            @else
+                                <a href="{{ route('registerclass') }}">Lesson</a>
+                            @endif
+                            <a href="{{ $coachingLink }}" class="{{ request()->routeIs('coaching.*') ? 'active' : '' }}">Coaching</a>
+                            @if($showSongTutorial)
+                                <a href="{{ route('song.tutorial.index') }}" class="{{ request()->routeIs('song.tutorial.index') ? 'active' : '' }}">Song Tutorial</a>
+                            @endif
+                        @endauth
                     </div>
 
                     <div class="nav-actions">
                         @auth
                             <div style="position:relative">
                                 <button id="profile-toggle" aria-haspopup="true" aria-expanded="false" style="display:inline-flex;align-items:center;gap:10px;background:transparent;border:none;padding:6px;border-radius:10px;cursor:pointer">
-                                    <img src="{{ asset('compro/img/ndelogo.png') }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
+                                    @php $avatar = auth()->user()->photoUrl(); @endphp
+                                    @if($avatar)
+                                        <img src="{{ $avatar }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
+                                    @else
+                                        <img src="{{ asset('compro/img/ndelogo.png') }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
+                                    @endif
                                 </button>
                                 <div id="profile-menu" role="menu" style="display:none;position:absolute;right:0;margin-top:8px;background:linear-gradient(180deg,#0b0b0b,#0e0e0e);border-radius:10px;padding:8px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 18px 40px rgba(0,0,0,0.6);min-width:180px;z-index:999">
                                     <div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.02)">
@@ -176,7 +199,8 @@
 
     {{-- Admin sub-navbar (visible to authenticated admin users) --}}
     @auth
-        @if(auth()->user()->is_admin && ! request()->routeIs('coaching.*') && ! request()->is('coaching*') && ! request()->routeIs('registerclass') && ! request()->is('registerclass*') && ! request()->routeIs('admin.coaching.*') && ! request()->is('admin/coaching*') && ! request()->routeIs('compro') && ! request()->is('compro*'))
+        @php $isAdminVisible = (auth()->user()->is_admin || auth()->user()->is_superadmin); @endphp
+        @if($isAdminVisible && ! request()->routeIs('coaching.*') && ! request()->is('coaching*') && ! request()->routeIs('registerclass') && ! request()->is('registerclass*') && ! request()->routeIs('admin.coaching.*') && ! request()->is('admin/coaching*') && ! request()->routeIs('compro') && ! request()->is('compro*'))
             <!-- hide this admin sub-navbar on coaching pages -->
             <nav style="background:#0b1220;color:#fff;padding:8px 20px;border-bottom:1px solid #0f1724;">
                 <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:18px;">

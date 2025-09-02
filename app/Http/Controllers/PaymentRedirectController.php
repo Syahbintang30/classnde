@@ -19,18 +19,33 @@ class PaymentRedirectController extends Controller
         if (! $orderId) {
             return view('payments.error', ['message' => 'Order ID tidak ditemukan pada URL.']);
         }
+        // Redirect finish requests to the centralized payments.thankyou handler which
+        // will display the final thank-you page when settlement is confirmed.
+        return redirect()->route('payments.thankyou', ['order_id' => $orderId]);
+    }
+
+    /**
+     * New: render the thankyou page for an order_id (replaces payments.finish view)
+     */
+    public function thankyou(Request $request)
+    {
+        $orderId = $request->query('order_id') ?? $request->query('orderId') ?? null;
+        if (! $orderId) {
+            return view('payments.error', ['message' => 'Order ID tidak ditemukan pada URL.']);
+        }
 
         $txn = Transaction::where('order_id', $orderId)->latest()->first();
+
+    // ensure the user relation is loaded to avoid static analysis/runtime notices
+    if ($txn) $txn->loadMissing('user');
 
         // If no txn found, attempt to query Midtrans (best-effort) to fetch status
         if (! $txn) {
             $remote = $this->queryMidtransStatus($orderId);
-            if ($remote && isset($remote['status_code']) || isset($remote['transaction_status'])) {
-                // create a minimal local record (pending) so we can show something
+            if ($remote && (isset($remote['status_code']) || isset($remote['transaction_status']))) {
                 $txn = Transaction::create([
                     'order_id' => $orderId,
                     'user_id' => null,
-                    'lesson_id' => null,
                     'package_id' => null,
                     'method' => null,
                     'amount' => $remote['gross_amount'] ?? null,
@@ -43,18 +58,16 @@ class PaymentRedirectController extends Controller
             }
         }
 
-        // If still not found, show error
         if (! $txn) {
             return view('payments.error', ['message' => 'Transaksi tidak ditemukan. Jika pembayaran sukses, server webhook mungkin belum memprosesnya. Silakan cek kembali nanti atau hubungi support.']);
         }
 
-        // If txn not yet succeeded, try to query Midtrans once to update
+        // Try to update remote once if not settled
         $successfulStates = ['settlement','capture','success'];
         if (! in_array(strtolower($txn->status), $successfulStates)) {
             $remote = $this->queryMidtransStatus($txn->order_id);
             if ($remote && isset($remote['transaction_status'])) {
                 $txn->status = $remote['transaction_status'];
-                // merge midtrans_response
                 $existing = $txn->midtrans_response;
                 if (is_string($existing)) $existing = json_decode($existing, true) ?: [];
                 $txn->midtrans_response = array_merge($existing ?? [], $remote ?: []);
@@ -62,12 +75,33 @@ class PaymentRedirectController extends Controller
             }
         }
 
-        if (in_array(strtolower($txn->status), $successfulStates)) {
-            return view('payments.finish', ['transaction' => $txn]);
+        // If not settled, keep user on payment page (do not redirect to thankyou)
+        if (! in_array(strtolower($txn->status), $successfulStates)) {
+            // Show an informative waiting/error page — keep existing payments.waiting for now
+            return view('payments.waiting', ['transaction' => $txn]);
         }
 
-    // otherwise show waiting page with next steps and Midtrans instruksi jika tersedia
-    return view('payments.waiting', ['transaction' => $txn]);
+        // At this point txn is settled. Prepare data to render the existing kelas.thankyou view
+        $user = null;
+        if ($txn && ($txn->user instanceof \App\Models\User)) {
+            $user = $txn->user;
+        } else {
+            $user = \Illuminate\Support\Facades\Auth::user();
+        }
+
+        $package = null;
+        if ($txn && $txn->package_id) {
+            $package = \App\Models\Package::find($txn->package_id);
+        }
+
+        // attempt to find a related ticket for the user if present
+        $ticket = null;
+        if ($user && isset($user->id)) {
+            $ticket = \App\Models\CoachingTicket::where('user_id', $user->id)->orderByDesc('id')->first();
+        }
+
+        // Render the same thankyou view used by KelasController but include transaction info
+        return view('kelas.thankyou', compact('user', 'package', 'ticket'));
     }
 
     /**

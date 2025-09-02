@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Package;
+use Illuminate\Support\Facades\Storage;
 
 class PackageController extends Controller
 {
@@ -32,7 +33,13 @@ class PackageController extends Controller
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'benefits' => 'nullable|string',
+            'image' => 'nullable|image|max:2048',
         ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('packages', 'public');
+            $data['image'] = $path;
+        }
 
         Package::create($data);
 
@@ -47,7 +54,22 @@ class PackageController extends Controller
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'benefits' => 'nullable|string',
+            'image' => 'nullable|image|max:2048',
         ]);
+
+        if ($request->hasFile('image')) {
+            // delete old image if exists
+            try {
+                if ($package->image && \Storage::disk('public')->exists($package->image)) {
+                    \Storage::disk('public')->delete($package->image);
+                }
+            } catch (\Throwable $e) {
+                // ignore deletion errors
+            }
+
+            $path = $request->file('image')->store('packages', 'public');
+            $data['image'] = $path;
+        }
 
         $package->update($data);
 

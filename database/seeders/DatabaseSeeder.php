@@ -20,6 +20,11 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
+        // Create default admin and superadmin accounts for local development (idempotent)
+
+        // Create default admin and superadmin accounts (separate seeder)
+        $this->call(\Database\Seeders\AdminUserSeeder::class);
+
     // seed lessons & topics
     $this->call(\Database\Seeders\LessonTopicSeeder::class);
     // seed song tutorial example
@@ -28,5 +33,7 @@ class DatabaseSeeder extends Seeder
     $this->call(\Database\Seeders\CoachingTicketSeeder::class);
     // seed packages (beginner/intermediate)
     $this->call(\Database\Seeders\PackageSeeder::class);
+    // seed upgrade-intermediate package if applicable
+    $this->call(\Database\Seeders\UpgradeIntermediatePackageSeeder::class);
     }
 }

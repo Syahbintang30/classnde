@@ -49,12 +49,18 @@
             @if(!empty($order['applied_referral_percent']) && $order['applied_referral_percent'] > 0)
                 <div style="display:flex;justify-content:space-between;color:#b8f0c6;margin-top:8px;font-weight:600">
                     <div>Referral Discount ({{ $order['applied_referral_percent'] }}%):</div>
-                    <div>- Rp {{ number_format( max(0, ($order['original_amount'] ?? $order['gross_amount']) - $order['gross_amount']),0,',','.') }}</div>
+                    <div id="referral_discount_amount">- Rp {{ number_format( max(0, ($order['original_amount'] ?? $order['gross_amount']) - $order['gross_amount']),0,',','.') }}</div>
                 </div>
                 @if(!empty($order['referral_code']))
-                    <div style="margin-top:6px;font-size:13px;color:rgba(255,255,255,0.75)">Referral code used: <strong>{{ $order['referral_code'] }}</strong></div>
+                    <div style="margin-top:6px;font-size:13px;color:rgba(255,255,255,0.75)">Referral code used: <strong id="referral_code_display">{{ $order['referral_code'] }}</strong></div>
                 @endif
             @endif
+
+            <!-- Voucher discount (calculated client-side when a voucher is applied) -->
+            <div id="voucher_discount_row" style="display:none;justify-content:space-between;color:#b8f0c6;margin-top:8px;font-weight:600">
+                <div id="voucher_discount_label">Voucher Discount:</div>
+                <div id="voucher_discount_amount">- Rp 0</div>
+            </div>
             <div style="display:flex;justify-content:space-between;color:rgba(255,255,255,0.7);margin-top:8px">
                 <div>Tax:</div>
                 <div>Rp 0</div>
@@ -63,7 +69,7 @@
             <div style="height:1px;background:rgba(255,255,255,0.03);margin:22px 0"></div>
             <div style="display:flex;justify-content:space-between;align-items:center">
                 <div style="font-weight:700">Total Payment:</div>
-                <div style="font-weight:800; font-size: 1.1em;">Rp {{ number_format($order['gross_amount'],0,',','.') }}</div>
+                <div id="total_payment_amount" style="font-weight:800; font-size: 1.1em;">Rp {{ number_format($order['gross_amount'],0,',','.') }}</div>
             </div>
         </div>
 
@@ -72,6 +78,10 @@
             <h3 style="margin-bottom:12px">Choose Your Payment Method</h3>
             <div class="payment-grid-container" id="payment-methods-list" data-total="{{ $order['gross_amount'] }}" data-order-id="{{ $order['order_id'] }}">
             @foreach($methods as $m)
+                {{-- Hide QRIS payment option on this page --}}
+                @if((isset($m->name) && strtolower($m->name) === 'qris') || (isset($m->display_name) && strtolower($m->display_name) === 'qris'))
+                    @continue
+                @endif
                 <label class="payment-option" for="payment-{{ $m->id }}" aria-label="{{ $m->display_name }}">
                 <input
                     type="radio"
@@ -143,6 +153,9 @@
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'payment-method-modal' }));
     }
 
+    // trigger initial update so server-applied referral is reflected in the UI
+    try { updateTotalsAfterDiscounts(); } catch(e){}
+
     // legacy manual handlers removed — all flows now use Midtrans via the PAY button
 
     document.getElementById('pay-button').addEventListener('click', function(){
@@ -156,6 +169,11 @@
     const payload = { order_id: '{{ $order['order_id'] }}', gross_amount: {{ $order['gross_amount'] }}, payment_method: paymentMethod };
     // include referral code so server can validate and apply referral discount
     payload.referral = '{{ $order['referral_code'] ?? '' }}';
+    // include voucher details if user applied one (so server can recalc and include in Midtrans order)
+    if (typeof appliedVoucher !== 'undefined' && appliedVoucher && appliedVoucher.code) {
+        payload.voucher_code = appliedVoucher.code;
+        if (appliedVoucher.id) payload.voucher_id = appliedVoucher.id;
+    }
     @if(isset($package))
             payload.package_id = {{ $package->id }};
             payload.package_qty = {{ request()->input('package_qty') ?: 1 }};
@@ -179,8 +197,18 @@
         }).then(r => r.json()).then(json => {
             if (json.snap_token) {
                 snap.pay(json.snap_token, {
-                    onSuccess: function(result){ document.getElementById('midtrans_result').value = JSON.stringify(result); document.getElementById('payment-complete-form').submit(); },
-                    onPending: function(result){ document.getElementById('midtrans_result').value = JSON.stringify(result); document.getElementById('payment-complete-form').submit(); },
+                    onSuccess: function(result){
+                        try { document.getElementById('midtrans_result').value = JSON.stringify(result); } catch(e){ }
+                        try { document.getElementById('payment-complete-form').submit(); } catch(e){ }
+                        // start polling server until webhook processed (settlement)
+                        startPollingForSettlement(result);
+                    },
+                    onPending: function(result){
+                        try { document.getElementById('midtrans_result').value = JSON.stringify(result); } catch(e){ }
+                        try { document.getElementById('payment-complete-form').submit(); } catch(e){ }
+                        // pending may transition to settlement; also start polling
+                        startPollingForSettlement(result);
+                    },
                     onError: function(err){ alert('Payment Failed. Please try again.'); }
                 });
             } else {
@@ -202,13 +230,85 @@
                     appliedVoucher = { code: code, id: json.voucher_id, discount_percent: json.discount_percent };
                     document.getElementById('voucher_feedback').innerText = 'Voucher applied: ' + json.discount_percent + '% off';
                     document.getElementById('voucher_feedback').style.color = '#b8f0c6';
+                    // update UI: compute voucher discount amount and show row + update total
+                    try { updateTotalsAfterDiscounts(); } catch(e){ console.error(e); }
                 } else {
                     appliedVoucher = null;
                     document.getElementById('voucher_feedback').innerText = json.message || 'Invalid voucher';
                     document.getElementById('voucher_feedback').style.color = '#f8d7da';
+                    try { updateTotalsAfterDiscounts(); } catch(e){}
                 }
             }).catch(e => { appliedVoucher = null; document.getElementById('voucher_feedback').innerText = 'Validation error'; document.getElementById('voucher_feedback').style.color = '#f8d7da'; });
     });
+
+    // helper: compute and render combined referral + voucher discount and update displayed gross amount
+    function updateTotalsAfterDiscounts(){
+        const dataEl = document.getElementById('payment-methods-list');
+        if(!dataEl) return;
+        const original = parseInt(dataEl.getAttribute('data-total') || '{{ $order['gross_amount'] }}', 10) || 0;
+
+        // referral percent provided server-side (if any)
+        const appliedReferralPercent = parseFloat('{{ $order['applied_referral_percent'] ?? 0 }}') || 0;
+        // compute referral-reduced gross (server already applied referral when creating order.gross_amount,
+        // but for client-side display of voucher we derive from original_amount if available)
+        const originalAmount = parseInt('{{ $order['original_amount'] ?? $order['gross_amount'] }}', 10) || original;
+        // amount after referral (server-side may have applied referral already to gross_amount)
+        const afterReferral = Math.round(originalAmount * (100 - appliedReferralPercent) / 100);
+
+        // voucher percent
+        const voucherPct = appliedVoucher && appliedVoucher.discount_percent ? parseFloat(appliedVoucher.discount_percent) : 0;
+
+        // voucher applies on top of referral-reduced amount (sequential percentage discounts)
+        const afterVoucher = Math.round(afterReferral * (100 - voucherPct) / 100);
+
+        const referralDiscountAmount = Math.max(0, originalAmount - afterReferral);
+        const voucherDiscountAmount = Math.max(0, afterReferral - afterVoucher);
+
+        // update referral display if exists
+        const refRow = document.getElementById('referral_discount_amount');
+        if (refRow) {
+            refRow.textContent = '- Rp ' + referralDiscountAmount.toLocaleString('id-ID');
+        }
+
+        // update voucher row
+        const voucherRow = document.getElementById('voucher_discount_row');
+        const voucherAmountEl = document.getElementById('voucher_discount_amount');
+        const voucherLabel = document.getElementById('voucher_discount_label');
+        if (voucherPct > 0) {
+            if (voucherRow) voucherRow.style.display = 'flex';
+            if (voucherAmountEl) voucherAmountEl.textContent = '- Rp ' + voucherDiscountAmount.toLocaleString('id-ID');
+            if (voucherLabel) voucherLabel.textContent = 'Voucher Discount (' + voucherPct + '%):';
+        } else {
+            if (voucherRow) voucherRow.style.display = 'none';
+            if (voucherAmountEl) voucherAmountEl.textContent = '- Rp 0';
+        }
+
+        // update displayed total
+        const totalEls = Array.from(document.querySelectorAll('[data-total]')).concat([]);
+        // update the visible Total Payment area inside the order card
+        const totalPaymentDisplay = document.querySelector('.flex-1 [style*="Total Payment:"]') || null;
+        // more reliable: find the Total Payment text by searching for the strong value near the 'Total Payment' label
+        const totalNode = Array.from(document.querySelectorAll('div')).find(d => d.textContent && d.textContent.trim().startsWith('Total Payment:'));
+        // fallback: directly update the large total value element by matching the number in the right place
+        try {
+            // There is an element with the total amount as the last strong text in the order card - use selector matching previous code
+            const orderCard = document.querySelector('div[style*="Your Order is Ready"]') || document.querySelector('div[style*="Your Order is Ready"]');
+        } catch(e){}
+
+        // simpler and safer: replace the last element that contained the gross total inside the left card
+        const leftCardTotals = document.querySelectorAll('div[style]');
+        // find the element that currently shows the gross_amount number (match formatted number from server)
+        const currentGrossFormatted = new Intl.NumberFormat('id-ID').format({{ $order['gross_amount'] }});
+
+        // Update the big total at the bottom of the card by selecting the element with the gross amount initially rendered
+        // We will search for element nodes that contain the server gross_amount string and replace their textContent
+        const serverGrossStr = 'Rp {{ number_format($order['gross_amount'],0,',','.') }}';
+    const totalEl = document.getElementById('total_payment_amount');
+    if (totalEl) totalEl.textContent = 'Rp ' + afterVoucher.toLocaleString('id-ID');
+
+        // also update the data-total attribute so other scripts using it see current value
+        try { dataEl.setAttribute('data-total', String(afterVoucher)); } catch(e){}
+    }
 
     // ensure voucher code (if applied) is included in midtrans payload by intercepting fetch call — simpler: append hidden input to payment form when pay is clicked
     document.getElementById('pay-button').addEventListener('click', function(){
@@ -224,6 +324,53 @@
             }
         }
     }, { once: true });
+
+    // Polling logic: query server-side status until settlement or timeout
+    function startPollingForSettlement(snapResult) {
+        var orderId = (snapResult && (snapResult.order_id || snapResult.orderId)) ? (snapResult.order_id || snapResult.orderId) : '{{ $order['order_id'] }}';
+        var lessonId = '{{ $lesson->id }}';
+        var maxMs = 2 * 60 * 1000; // 2 minutes
+        var start = Date.now();
+        var interval = 2000; // start 2s
+
+        function poll(){
+            fetch('/api/transactions/status?order_id=' + encodeURIComponent(orderId), { credentials: 'same-origin' })
+                .then(r => r.json()).then(json => {
+                    if (json && json.status === 'settlement') {
+                        // server recorded settlement; redirect to thankyou
+                        window.location.href = '/registerclass/' + lessonId + '/thankyou?order_id=' + encodeURIComponent(orderId);
+                        return;
+                    }
+                    // not yet settled
+                    if (Date.now() - start > maxMs) {
+                        // timeout: redirect to payment page with notice so user can retry or check later
+                        window.location.href = '/registerclass/' + lessonId + '/payment?order_id=' + encodeURIComponent(orderId);
+                        return;
+                    }
+                    // exponential backoff up to 5s
+                    interval = Math.min(5000, interval + 1000);
+                    setTimeout(poll, interval);
+                }).catch(e => {
+                    // on network error, retry until timeout
+                    if (Date.now() - start > maxMs) {
+                        window.location.href = '/registerclass/' + lessonId + '/payment?order_id=' + encodeURIComponent(orderId);
+                        return;
+                    }
+                    setTimeout(poll, interval);
+                });
+        }
+        // show a small message to user that we're waiting for confirmation
+        try {
+            var pd = document.getElementById('payment-details-display');
+            var waitEl = document.createElement('div');
+            waitEl.id = 'payment-waiting-for-webhook';
+            waitEl.style.marginTop = '12px';
+            waitEl.style.color = '#b8f0c6';
+            waitEl.innerText = 'Menunggu konfirmasi pembayaran... Mengarahkan Anda segera setelah pembayaran dikonfirmasi.';
+            pd.appendChild(waitEl);
+        } catch(e) {}
+        poll();
+    }
 </script>
 @endpush
 

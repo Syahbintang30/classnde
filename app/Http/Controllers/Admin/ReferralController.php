@@ -57,16 +57,23 @@ class ReferralController extends Controller
             ->withCount(['coachingTickets as total_tickets_count'])
             ->paginate(50);
 
-        // only role packages (Beginner / Intermediate) are considered the user's class role
-        $rolePackages = Package::whereIn('name', ['Beginner', 'Intermediate'])->get()->keyBy('id');
+                // only role packages (Beginner / Intermediate) are considered the user's class role
+                // include the upgrade-intermediate slug so upgrade users count as Intermediate
+                $rolePackages = Package::where(function($q){
+                        $q->whereIn('name', ['Beginner', 'Intermediate'])
+                            ->orWhere('slug', 'upgrade-intermediate');
+                })->get()->keyBy('id');
         return view('admin.users.packages', compact('users','rolePackages'));
     }
 
     // Show edit form for a single user (package, ticket count)
     public function editUser(User $user)
     {
-        // only allow role packages
-        $packages = Package::whereIn('name', ['Beginner', 'Intermediate'])->get()->keyBy('id');
+                // only allow role packages (include upgrade-intermediate as Intermediate)
+                $packages = Package::where(function($q){
+                        $q->whereIn('name', ['Beginner', 'Intermediate'])
+                            ->orWhere('slug', 'upgrade-intermediate');
+                })->get()->keyBy('id');
         // count current unused tickets and total tickets
         $available = CoachingTicket::where('user_id', $user->id)->where('is_used', false)->count();
         $total = CoachingTicket::where('user_id', $user->id)->count();
@@ -77,8 +84,11 @@ class ReferralController extends Controller
     public function updateUser(Request $request, User $user)
     {
 
-        // restrict allowed package ids to Beginner/Intermediate
-        $allowed = Package::whereIn('name', ['Beginner', 'Intermediate'])->pluck('id')->toArray();
+                // restrict allowed package ids to Beginner/Intermediate (treat upgrade-intermediate as Intermediate)
+                $allowed = Package::where(function($q){
+                        $q->whereIn('name', ['Beginner', 'Intermediate'])
+                            ->orWhere('slug', 'upgrade-intermediate');
+                })->pluck('id')->toArray();
         $data = $request->validate([
             'package_id' => ['nullable', 'integer', function($attr, $value, $fail) use ($allowed) {
                 if ($value !== null && ! in_array((int)$value, $allowed)) $fail('Selected package is not allowed.');

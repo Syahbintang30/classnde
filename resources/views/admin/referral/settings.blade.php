@@ -26,16 +26,6 @@
             <button class="btn btn-primary">Save</button>
         </form>
     </div>
-    <div class="col-md-4">
-        <h5>Benefits of referral settings</h5>
-        <ul>
-            <li>Control referral discount without code changes (marketing flexibility).</li>
-            <li>Auto-grant tickets reduces manual intervention for rewarding referrers.</li>
-            <li>Exportable data for promo tracking (export option below).</li>
-        </ul>
-        <div class="mt-3">
-            <a href="{{ route('admin.referral.export') }}" class="btn btn-outline-secondary">Export referral usage CSV</a>
-        </div>
-    </div>
+    
 </div>
 @endsection

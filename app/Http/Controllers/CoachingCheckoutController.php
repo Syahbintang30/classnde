@@ -76,16 +76,15 @@ class CoachingCheckoutController extends Controller
 
         // create a local Transaction record (pending) - reuse Transaction model
         $external = 'coaching-' . time() . '-' . Str::random(6);
-        $txn = Transaction::create([
-            'order_id' => $external,
-            'user_id' => $user->id,
-            'lesson_id' => null,
-            'package_id' => $package->id,
-            'method' => 'midtrans',
-            'amount' => $gross,
-            'status' => 'pending',
-            'midtrans_response' => null,
-        ]);
+            $txn = Transaction::create([
+                'order_id' => $external,
+                'user_id' => $user->id,
+                'package_id' => $package->id,
+                'method' => 'midtrans',
+                'amount' => $gross,
+                'status' => 'pending',
+                'midtrans_response' => null,
+            ]);
 
         // Return order info for client to call Midtrans Snap (client will call /api/midtrans/create)
         return response()->json(['order_id' => $external, 'gross_amount' => $gross, 'package_id' => $package->id]);

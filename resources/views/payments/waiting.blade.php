@@ -71,9 +71,9 @@ document.addEventListener('DOMContentLoaded', function(){
             const j = await res.json();
             msg.textContent = 'Status saat ini: ' + (j.status || j.transaction?.status || 'unknown');
             if(txnStatus && (j.status || j.transaction?.status)) txnStatus.textContent = j.status || j.transaction.status;
-            if(['settlement','capture','success'].includes(String(j.status || j.transaction?.status).toLowerCase())){
-                // if settled, redirect to finish page to show success flow
-                window.location = '{{ route('payments.finish') }}?order_id=' + encodeURIComponent(orderId);
+                if(['settlement','capture','success'].includes(String(j.status || j.transaction?.status).toLowerCase())){
+                // if settled, redirect to thankyou page to show success flow
+                window.location = '{{ route('payments.thankyou') }}?order_id=' + encodeURIComponent(orderId);
             }
         }catch(e){ msg.textContent = 'Error: ' + (e.message || e); }
     });

@@ -28,4 +28,16 @@ class RegistrationTest extends TestCase
         $this->assertAuthenticated();
     $response->assertRedirect(route('registerclass', absolute: false));
     }
+
+    public function test_disposable_email_is_rejected()
+    {
+        $response = $this->post('/registerclass', [
+            'name' => 'Disposable',
+            'email' => 'one@mailinator.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertSessionHasErrors(['email']);
+    }
 }

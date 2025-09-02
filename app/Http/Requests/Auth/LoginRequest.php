@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Rules\NotDisposableEmail;
+use App\Rules\AllowedEmailDomain;
 
 class LoginRequest extends FormRequest
 {
@@ -27,7 +29,9 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            // Block disposable/fake email domains at login to prevent abuse and ensure real accounts
+            // ensure email belongs to allowed domains; allow admin domain for login attempts
+            'email' => ['required', 'string', 'email', new NotDisposableEmail(), new AllowedEmailDomain(true)],
             'password' => ['required', 'string'],
         ];
     }

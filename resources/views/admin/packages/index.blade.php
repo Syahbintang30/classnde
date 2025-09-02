@@ -24,6 +24,7 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Name</th>
+                                    <th>Image</th>
                                     <th>Slug</th>
                                     <th>Benefits</th>
                                     <th>Price</th>
@@ -35,6 +36,13 @@
                                 <tr>
                                     <td>{{ $p->id }}</td>
                                     <td class="text-dark">{{ $p->name }}</td>
+                                    <td>
+                                        @if(!empty($p->image))
+                                            <img src="{{ asset('storage/'.$p->image) }}" alt="{{ $p->name }}" style="height:48px;object-fit:cover;border-radius:6px">
+                                        @else
+                                            <div style="height:48px;width:72px;background:#f5f5f5;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#999">—</div>
+                                        @endif
+                                    </td>
                                     <td class="text-dark">{{ $p->slug }}</td>
                                     <td class="text-dark" style="max-width:320px">
                                         @if(!empty($p->benefits))

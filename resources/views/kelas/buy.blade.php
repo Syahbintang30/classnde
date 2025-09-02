@@ -3,6 +3,55 @@
 @section('title', 'Register Class')
 
 @section('content')
+<style>
+/* Responsive tweaks for /registerclass (keeps existing visual UI but adapts layout on smaller screens)
+     We use specific selectors and !important to override inline styles only where necessary. */
+
+/* make container centered and cap width on large screens */
+.container { box-sizing: border-box; max-width: 1180px; margin: 0 auto; }
+
+/* Desktop / tablet breakpoint adjustments */
+@media (max-width: 1024px) {
+    .container { padding: 28px 24px !important; }
+    /* the main two-column wrapper: force wrapping and smaller column widths */
+    .container > div[style*="display:flex"] { flex-wrap: wrap !important; gap: 18px !important; }
+    /* left content (packages) becomes a bit narrower than full; allow shrinking */
+    .container > div[style*="display:flex"] > div[style*="flex:1"] { max-width: 66% !important; width: 100% !important; }
+    /* right column (form) becomes narrower */
+    .container > div[style*="display:flex"] > div[style*="width:460px"] { width: 32% !important; }
+    .packages-grid { padding-left: 8px !important; padding-right: 8px !important; }
+}
+
+/* Mobile - stack columns vertically */
+@media (max-width: 768px) {
+    .container { padding: 20px 16px !important; }
+    .container > div[style*="display:flex"] { flex-direction: column !important; align-items: stretch !important; }
+    .container > div[style*="display:flex"] > div[style*="flex:1"] { order: 1 !important; width: 100% !important; max-width: none !important; }
+    .container > div[style*="display:flex"] > div[style*="width:460px"] { order: 2 !important; width: 100% !important; }
+
+    /* packages: show stacked cards on mobile (keeps card look) */
+    .packages-grid { display: flex !important; flex-direction: column !important; gap: 12px !important; overflow-x: visible !important; -webkit-overflow-scrolling: auto !important; padding-left: 6px !important; padding-right: 6px !important; }
+    .class-card { width: 100% !important; min-width: 0 !important; }
+    .class-card img { width: 100% !important; height: auto !important; max-height: 320px !important; object-fit: cover !important; }
+
+    /* selected package preview: stack content */
+    #selected_package_preview { display: flex !important; flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+    #selected_package_preview > div:last-child { width: 100% !important; }
+
+    /* shrink step indicator on small screens */
+    .steps { max-width: 520px !important; padding: 0 6px !important; }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+    .container { padding: 16px 12px !important; }
+    h2 { font-size: 18px !important; }
+    .class-card img { max-height: 220px !important; }
+    input, textarea, select, button { font-size: 15px !important; }
+    .pkg-description, .pkg-benefits-list { font-size: 13px !important; }
+}
+
+</style>
 <!-- Steps indicator: info -> payment -> done -->
 <div style="display:flex;justify-content:center;padding-top:18px;">
     <div class="steps" role="tablist" aria-label="Booking steps" style="display:flex;align-items:center;gap:12px;max-width:720px;width:100%;justify-content:center;">
@@ -26,12 +75,17 @@
                     <div class="class-card" data-package-id="{{ $pkg->id }}" data-package-price="{{ $pkg->price }}" data-package-slug="{{ $pkg->slug }}" style="flex:1;border:1px solid rgba(255,255,255,0.06);padding:12px;border-radius:8px;background:#0b0b0b;transition:transform .18s ease, box-shadow .18s ease;cursor:pointer;">
                         <div style="overflow:hidden;border-radius:6px;">
                             @php
-                                // select image based on slug; coaching-ticket has its own image if present
-                                $img = 'intermediate';
-                                if ($pkg->slug == 'beginner') $img = 'beginner';
-                                if ($pkg->slug == config('coaching.coaching_package_slug', 'coaching-ticket')) $img = 'coaching-ticket';
+                                // prefer admin-uploaded image stored on the public disk; fallback to bundled static pictures
+                                if (!empty($pkg->image)) {
+                                    $imgSrc = asset('storage/' . $pkg->image);
+                                } else {
+                                    $img = 'intermediate';
+                                    if ($pkg->slug == 'beginner') $img = 'beginner';
+                                    if ($pkg->slug == config('coaching.coaching_package_slug', 'coaching-ticket')) $img = 'coaching-ticket';
+                                    $imgSrc = asset('pictures/' . $img . '.jpg');
+                                }
                             @endphp
-                            <img src="{{ asset('pictures/' . $img . '.jpg') }}" alt="{{ $pkg->name }}" style="width:100%;height:220px;object-fit:cover;display:block;">
+                            <img src="{{ $imgSrc }}" alt="{{ $pkg->name }}" style="width:100%;height:220px;object-fit:cover;display:block;">
                         </div>
                         <h3 style="margin:12px 0 8px 0">{{ $pkg->name }}</h3>
                         @if(!empty($pkg->description))
@@ -79,6 +133,16 @@
                             @endif
                         </div>
                         <div style="margin-top:8px;font-weight:700">Rp <span class="pkg-price">{{ number_format($pkg->price,0,',','.') }}</span></div>
+                        @if(!empty($pkg->slug) && $pkg->slug === 'upgrade-intermediate')
+                            @php
+                                $beginner = \App\Models\Package::where('slug','beginner')->first();
+                                $intermediate = \App\Models\Package::where('slug','intermediate')->first();
+                            @endphp
+                            <div style="margin-top:8px;font-size:13px;opacity:0.85">Catatan: Hanya untuk pemilik paket <strong>Beginner</strong>.</div>
+                            @if($beginner && $intermediate)
+                                <div style="margin-top:6px;font-size:13px;opacity:0.85">Harga Beginner: Rp {{ number_format($beginner->price,0,',','.') }} &nbsp;•&nbsp; Harga Intermediate: Rp {{ number_format($intermediate->price,0,',','.') }}</div>
+                            @endif
+                        @endif
                     </div>
                 @endforeach
             </div>
@@ -96,22 +160,27 @@
 
     <form method="POST" action="{{ route('registerclass.register') }}">
                 @csrf
+                {{-- per-field inline errors only: show single alert under the field that has a problem --}}
             <input type="hidden" name="selected_package" value="" id="selected_package_input" />
             <input type="hidden" name="selected_package_price" value="" id="selected_package_price_input" />
             <input type="hidden" name="referral" id="hidden_referral_input" value="{{ old('referral') ?? session('referral') ?? '' }}" />
                 <div style="margin-bottom:12px">
                     <label style="display:block;margin-bottom:6px">Full Name</label>
-                    <input name="name" value="{{ old('name') }}" required style="width:100%;padding:14px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
+                    <input id="fullname_input" name="name" value="{{ old('name') }}" style="width:100%;padding:14px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
+                    @error('name') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
+                    <div id="name_error" style="display:none;color:#ffb3b3;margin-top:6px;font-size:13px"></div>
                 </div>
 
                 <div style="margin-bottom:12px">
                     <label style="display:block;margin-bottom:6px">Email</label>
                     <input name="email" type="email" value="{{ old('email') }}" required style="width:100%;padding:12px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
+                    @error('email') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
                 </div>
 
                 <div style="margin-bottom:12px">
                     <label style="display:block;margin-bottom:6px">Phone</label>
                     <input name="phone" value="{{ old('phone') }}" style="width:100%;padding:12px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
+                    @error('phone') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
                 </div>
 
                 
@@ -120,6 +189,7 @@
                     <label style="display:block;margin-bottom:6px">Password</label>
                     <div class="password-field" style="position:relative;">
                         <input id="register-password" name="password" type="password" required style="width:100%;padding:14px 44px 14px 14px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
+                        @error('password') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
                         <button type="button" id="toggle-password" aria-label="Show password" title="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;cursor:pointer;padding:6px;border-radius:6px;">
                             <i class="fa fa-eye" aria-hidden="true"></i>
                         </button>
@@ -130,15 +200,18 @@
                     <label style="display:block;margin-bottom:6px">Confirm Password</label>
                     <div class="password-field" style="position:relative;">
                         <input id="register-password-confirm" name="password_confirmation" type="password" required style="width:100%;padding:14px 44px 14px 14px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
+                        @error('password_confirmation') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
                         <button type="button" id="toggle-password-confirm" aria-label="Show password" title="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;cursor:pointer;padding:6px;border-radius:6px;">
                             <i class="fa fa-eye" aria-hidden="true"></i>
                         </button>
                     </div>
+                    <div id="confirm_password_error" style="display:none;color:#ffb3b3;margin-top:6px;font-size:13px"></div>
                 </div>
 
                 <div style="margin-bottom:12px">
                     <label style="display:block;margin-bottom:6px">Referral code (optional)</label>
                     <input id="referral_code_input" name="referral" value="{{ old('referral') ?? session('referral') ?? '' }}" placeholder="Enter referral code or leave empty" style="width:100%;padding:12px;background:transparent;border:1px solid #333;color:#fff !important;border-radius:4px;" />
+                    @error('referral') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
                     <div id="referral_hint" style="margin-top:6px;color:rgba(255,255,255,0.6);font-size:13px">Jika Anda punya kode referral, masukkan untuk mendapatkan diskon.</div>
                 </div>
 
@@ -379,6 +452,21 @@ document.addEventListener('DOMContentLoaded', function(){
                 if (qtyContainerLogged) qtyContainerLogged.style.display = 'none';
                 if (qtyDisplayLogged) qtyDisplayLogged.textContent = '1';
             }
+            // refresh referral discount preview when package changes (no page reload)
+            try {
+                const refInputEl = document.getElementById('referral_code_input') || document.getElementById('hidden_referral_input');
+                const code = refInputEl ? (refInputEl.value||'').trim() : '';
+                if (code) {
+                    if (window.lastReferralCode && window.lastReferralCode === code && typeof window.updatePricesWithDiscount === 'function') {
+                        window.updatePricesWithDiscount(window.lastReferralDiscountPercent || 0);
+                    } else if (typeof window.validateReferralCode === 'function') {
+                        // re-validate in background and update preview
+                        window.validateReferralCode(code);
+                    }
+                } else if (typeof window.updatePricesWithDiscount === 'function') {
+                    window.updatePricesWithDiscount(0);
+                }
+            } catch (e) { console.error('refresh referral preview', e); }
         }
 
         // initialize after DOM ready
@@ -524,6 +612,45 @@ document.addEventListener('DOMContentLoaded', function(){
         }
         if(guestForm) guestForm.addEventListener('submit', requirePackageOnSubmit);
         if(purchaseForm) purchaseForm.addEventListener('submit', requirePackageOnSubmit);
+        // client-side guard: ensure password and confirmation match before submit
+        const registerForm = document.querySelector('form[action="{{ route('registerclass.register') }}"]');
+        if (registerForm) {
+            registerForm.addEventListener('submit', function(e){
+                const nameInput = document.getElementById('fullname_input');
+                const nameError = document.getElementById('name_error');
+                const pwd = document.getElementById('register-password');
+                const pwdc = document.getElementById('register-password-confirm');
+                const confirmError = document.getElementById('confirm_password_error');
+
+                // validate name: required + max 255
+                if (nameInput) {
+                    const v = String(nameInput.value || '').trim();
+                    if (!v) {
+                        e.preventDefault();
+                        if (nameError) { nameError.style.display = 'block'; nameError.textContent = 'Nama wajib diisi.'; }
+                        nameInput.focus();
+                        return false;
+                    }
+                    if (v.length > 255) {
+                        e.preventDefault();
+                        if (nameError) { nameError.style.display = 'block'; nameError.textContent = 'Nama terlalu panjang (maks 255 karakter).'; }
+                        nameInput.focus();
+                        return false;
+                    }
+                }
+                if (nameError) { nameError.style.display = 'none'; nameError.textContent = ''; }
+
+                // password confirmation
+                if (pwd && pwdc && pwd.value !== pwdc.value) {
+                    e.preventDefault();
+                    if (confirmError) { confirmError.style.display = 'block'; confirmError.textContent = 'Konfirmasi password tidak cocok.'; }
+                    pwd.focus();
+                    return false;
+                }
+                if (confirmError) { confirmError.style.display = 'none'; confirmError.textContent = ''; }
+                return true;
+            });
+        }
     })();
 </script>
 <script>
@@ -569,6 +696,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 } else {
                     if(disc){ disc.style.display = 'none'; disc.textContent = ''; }
                 }
+                // store last applied percent so other code can reuse without revalidating
+                try { window.lastReferralDiscountPercent = pct; } catch(e){}
             }
 
             async function validate(code){
@@ -578,9 +707,14 @@ document.addEventListener('DOMContentLoaded', function(){
                     const res = await fetch('/referral/validate', { method:'POST', headers:{'Content-Type':'application/json','X-CSRF-TOKEN': token}, body: JSON.stringify({ code }) });
                     const body = await res.json();
                     if(body && body.valid){
-                        if(hint) hint.textContent = 'Kode valid. Diskon referral: ' + (body.discount_percent || discountPercent) + '%';
-                        updatePricesWithDiscount(body.discount_percent || discountPercent);
+                        const pct = body.discount_percent || discountPercent;
+                        if(hint) hint.textContent = 'Kode valid. Diskon referral: ' + pct + '%';
+                        // persist last validated code and percent
+                        try { window.lastReferralCode = code; window.lastReferralDiscountPercent = pct; } catch(e){}
+                        updatePricesWithDiscount(pct);
                     } else {
+                        // clear last validated state when invalid
+                        try { window.lastReferralCode = null; window.lastReferralDiscountPercent = 0; } catch(e){}
                         if(hint) hint.textContent = 'Kode referral tidak valid.';
                         updatePricesWithDiscount(0);
                     }
@@ -590,6 +724,9 @@ document.addEventListener('DOMContentLoaded', function(){
                     updatePricesWithDiscount(0);
                 }
             }
+
+            // expose helpers globally so selection changes can refresh the price preview
+            try { window.updatePricesWithDiscount = updatePricesWithDiscount; window.validateReferralCode = validate; } catch(e){}
 
             if(input){
                 let timeout = null;
@@ -663,11 +800,11 @@ document.addEventListener('DOMContentLoaded', function(){
                 window.snap.pay(snapToken, {
                     onSuccess: function(result){
                         const q = serverOrderId ? ('?order_id=' + encodeURIComponent(serverOrderId)) : '';
-                        window.location = '{{ route('payments.finish') }}' + q;
+                        window.location = '{{ route('payments.thankyou') }}' + q;
                     },
                     onPending: function(result){
                         const q = serverOrderId ? ('?order_id=' + encodeURIComponent(serverOrderId)) : '';
-                        window.location = '{{ route('payments.finish') }}' + q;
+                        window.location = '{{ route('payments.thankyou') }}' + q;
                     },
                     onError: function(err){
                         const msg = (err && err.message) || 'Payment failed';

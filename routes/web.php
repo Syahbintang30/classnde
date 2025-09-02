@@ -9,7 +9,10 @@ use App\Http\Controllers\ProfileController;
 
 // move company profile to /ndeofficial and make root redirect to dashboard (home)
 Route::get('/ndeofficial', function () {
-    return view('compro'); // company profile (company profile stays at /ndeofficial)
+    // Load promo bunny GUID and title from DB settings only (admin panel should be the source of truth)
+    $promoGuid = \App\Models\Setting::get('nde.promo_bunny_guid', null);
+    $promoTitle = \App\Models\Setting::get('nde.promo_title', null);
+    return view('compro', ['promo_bunny_guid' => $promoGuid, 'promo_title' => $promoTitle]); // company profile (company profile stays at /ndeofficial)
 })->name('compro');
 
 // make the app home point to the registerclass (purchase/promotions landing)
@@ -53,7 +56,7 @@ Route::get('/song-tutorial/{lesson}/content', [App\Http\Controllers\SongTutorial
 //     Route::resource('topics', TopicController::class);
 // });
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\EnsureAdminOrSuper::class)->group(function () {
     Route::get('/', function(){
         return redirect(route('admin.lessons.index'));
     })->name('dashboard');
@@ -120,11 +123,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('vouchers/{voucher}', [\App\Http\Controllers\Admin\VoucherController::class, 'update'])->name('vouchers.update');
     Route::delete('vouchers/{voucher}', [\App\Http\Controllers\Admin\VoucherController::class, 'destroy'])->name('vouchers.destroy');
 
+    // Promo settings (Bunny promo video) - centralize to superadmin VideoPromoController
+    // Redirect the legacy settings page to the superadmin-managed videopromo page so all edits come
+    // from the admin panel and not from .env.
+    Route::get('settings/promo', function () {
+        return redirect(route('videopromo'));
+    })->name('admin.settings.promo');
+
     // admin user packages/tickets page
     Route::get('users/packages', [\App\Http\Controllers\Admin\ReferralController::class, 'userPackages'])->name('users.packages');
     // admin: edit user package and tickets
     Route::get('users/{user}/edit', [\App\Http\Controllers\Admin\ReferralController::class, 'editUser'])->name('users.edit');
     Route::post('users/{user}', [\App\Http\Controllers\Admin\ReferralController::class, 'updateUser'])->name('users.update');
+    
+    // Video promo admin (superadmin only)
+    Route::get('videopromo', [\App\Http\Controllers\Admin\VideoPromoController::class, 'edit'])->middleware(\App\Http\Middleware\EnsureSuperAdmin::class)->name('videopromo');
+    Route::post('videopromo', [\App\Http\Controllers\Admin\VideoPromoController::class, 'update'])->middleware(\App\Http\Middleware\EnsureSuperAdmin::class)->name('videopromo.update');
     // NOTE: caching-bookings routes removed — bookings are now handled directly via coaching/bookings accept/reject
 });
 
@@ -149,6 +163,19 @@ Route::get('/topics/{topic}/stream', function (App\Models\Topic $topic) {
     if ($signed) return response()->json(['url' => $signed]);
     return response()->json(['url' => BunnyController::cdnUrl($path)]);
 })->name('topics.stream');
+
+// Public endpoint to return promo video stream URL (signed if signing key present)
+Route::get('/promo-stream', function () {
+    $guid = \App\Models\Setting::get('nde.promo_bunny_guid', null);
+    if (! $guid) return response()->json(['url' => null]);
+    try {
+        $signed = \App\Http\Controllers\BunnyController::signStreamUrl($guid, 300);
+        if ($signed) return response()->json(['url' => $signed]);
+        return response()->json(['url' => \App\Http\Controllers\BunnyController::cdnUrl($guid)]);
+    } catch (\Throwable $e) {
+        return response()->json(['url' => \App\Http\Controllers\BunnyController::cdnUrl($guid)]);
+    }
+});
 
 // Coaching feature routes (require authentication)
 Route::middleware('auth')->group(function(){
@@ -209,13 +236,14 @@ Route::middleware('auth')->group(function(){
 // Lightweight endpoint to create midtrans snap token (should be in api.php in bigger apps)
 Route::post('/api/midtrans/create', [App\Http\Controllers\MidtransController::class, 'createSnapToken']);
 
-// QRIS generation endpoint
-Route::post('/payments/generate-qris', [App\Http\Controllers\PaymentController::class, 'generateQris']);
 // Midtrans server-to-server notification (webhook)
 Route::post('/payments/midtrans-notify', [App\Http\Controllers\PaymentController::class, 'midtransNotification']);
 
+// Endpoint for client to poll transaction status (used to wait until webhook processed)
+Route::get('/api/transactions/status', [App\Http\Controllers\PaymentController::class, 'transactionStatus']);
+
 // Client-side redirect targets after payment actions (user-facing)
-Route::get('/payments/finish', [App\Http\Controllers\PaymentRedirectController::class, 'finish'])->name('payments.finish');
+Route::get('/payments/thankyou', [App\Http\Controllers\PaymentRedirectController::class, 'thankyou'])->name('payments.thankyou');
 Route::get('/payments/error', [App\Http\Controllers\PaymentRedirectController::class, 'error'])->name('payments.error');
 Route::get('/payments/status', [App\Http\Controllers\PaymentRedirectController::class, 'status'])->name('payments.status');
 
@@ -254,6 +282,7 @@ Route::middleware('auth')->group(function(){
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile/referrals', [ProfileController::class, 'referrals'])->name('profile.referrals');
     // Password update used by the profile password partial
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('password.update');

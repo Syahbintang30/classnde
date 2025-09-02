@@ -9,7 +9,7 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h3 class="card-title mb-3 text-dark">Create Package</h3>
-                    <form method="POST" action="{{ route('admin.packages.store') }}">
+                    <form method="POST" action="{{ route('admin.packages.store') }}" enctype="multipart/form-data">
                         @csrf
 
                         <div class="mb-3">
@@ -36,6 +36,12 @@
                             <label class="form-label text-dark">Benefits (one per line)</label>
                             <textarea name="benefits" class="form-control" rows="5" placeholder="Write each benefit on its own line">{{ old('benefits') }}</textarea>
                             <div class="form-text">Benefits will be shown as a list on the class cards. Use one benefit per line.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-dark">Image (optional)</label>
+                            <input type="file" name="image" accept="image/*" class="form-control" />
+                            <div class="form-text">Optional image shown on package cards. Max 2MB.</div>
                         </div>
 
                         <div class="text-end">

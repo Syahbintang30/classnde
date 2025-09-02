@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Lesson;
 use App\Models\Package;
 use App\Models\CoachingTicket;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class KelasController extends Controller
 {
@@ -23,8 +25,58 @@ class KelasController extends Controller
     $eligibleSlugs = config('coaching.eligible_packages', ['beginner','intermediate']);
 
     if ($user) {
-        // logged-in users should only see the coaching-ticket package
+        // logged-in users should normally only see the coaching-ticket package
         $packages = Package::where('slug', $coachingSlug)->orderBy('price')->get();
+
+        // If the user previously purchased the 'beginner' package, offer an
+        // "Upgrade Intermediate" package priced at (intermediate - beginner).
+        try {
+            $hasBeginner = false;
+            // check current package_id first
+            if (! empty($user->package_id)) {
+                $cur = Package::find($user->package_id);
+                if ($cur && $cur->slug === 'beginner') $hasBeginner = true;
+            }
+            // fallback: check historical purchases via UserPackage
+            if (! $hasBeginner) {
+                $hasBeginner = \App\Models\UserPackage::where('user_id', $user->id)
+                    ->whereHas('package', function($q){ $q->where('slug', 'beginner'); })
+                    ->exists();
+            }
+
+            if ($hasBeginner) {
+                $beginner = Package::where('slug', 'beginner')->first();
+                $intermediate = Package::where('slug', 'intermediate')->first();
+                if ($beginner && $intermediate) {
+                    $diff = max(0, intval($intermediate->price) - intval($beginner->price));
+                    if ($diff > 0) {
+                        // create or update a special upgrade package record so it can be selected/validated
+                        $upgrade = Package::where('slug', 'upgrade-intermediate')->first();
+                        if (! $upgrade) {
+                            $upgrade = Package::create([
+                                'name' => 'Upgrade Intermediate',
+                                'slug' => 'upgrade-intermediate',
+                                'price' => $diff,
+                                'description' => 'Upgrade from Beginner to Intermediate — bayar selisih harga saja.',
+                                'benefits' => "Upgrade fee to move from Beginner to Intermediate.",
+                                'image' => null,
+                            ]);
+                        } else {
+                            // keep price in sync with current difference
+                            if ((int)$upgrade->price !== $diff) {
+                                $upgrade->price = $diff;
+                                $upgrade->save();
+                            }
+                        }
+                        // append upgrade package to the packages collection
+                        $packages = $packages->concat(collect([$upgrade]));
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // don't break the page if upgrade creation fails; just log and continue
+            \Illuminate\Support\Facades\Log::warning('Failed to prepare upgrade package', ['err' => $e->getMessage(), 'user_id' => $user->id]);
+        }
     } else {
         // guests see the eligible beginner/intermediate packages only
         $packages = Package::whereIn('slug', $eligibleSlugs)->orderBy('price')->get();
@@ -189,21 +241,11 @@ class KelasController extends Controller
     /** @var \App\Models\User|null $user */
     $user = Auth::user();
         // Assign user's package if provided
-        if ($user) {
-            $pkg = $request->input('package_id') ?: $user->package_id;
-            if ($pkg) {
-                $user->package_id = $pkg;
-                $user->save();
-            }
-        }
-        // create a CoachingTicket placeholder (no lesson_id now)
-        CoachingTicket::create([
-            'user_id' => $user->id,
-            'source' => 'purchase',
-            'is_used' => false,
-        ]);
-
-        return redirect()->route('coaching.index')->with('status', 'Pembelian berhasil. Anda dapat memesan sesi coaching.');
+    // Do not grant package or create tickets here — permission and DB inserts must
+    // only happen once the payment reaches 'settlement'. Keep a lightweight
+    // acknowledgement and redirect the user to the payment UI where the
+    // settlement will be processed via webhook / client polling.
+    return redirect()->route('kelas.payment', ['lesson' => $lesson->id, 'package_id' => $request->input('package_id')])->with('info', 'Silakan lanjutkan pembayaran untuk menyelesaikan pembelian. Akses paket akan diberikan setelah pembayaran terkonfirmasi.');
     }
 
     /**
@@ -214,85 +256,186 @@ class KelasController extends Controller
     /** @var \App\Models\User|null $user */
     $user = Auth::user();
 
-        // In a production app you'd validate the notification from Midtrans signature
-        // If there's no authenticated user, check for pre-register session data and create the user now
-        if (! $user && $request->session()->has('pre_register')) {
-            $pre = $request->session()->get('pre_register');
-            // basic validation - ensure email not already used
-            $exists = \App\Models\User::where('email', $pre['email'])->exists();
-            if ($exists) {
-                // if exists, log the user in
-                $user = \App\Models\User::where('email', $pre['email'])->first();
-                Auth::login($user);
-            } else {
-                $user = \App\Models\User::create([
-                    'name' => $pre['name'] ?? 'User',
-                    'email' => $pre['email'],
-                    'password' => \Illuminate\Support\Facades\Hash::make($pre['password'] ?? str()->random(12)),
-                    'phone' => $pre['phone'] ?? null,
-                        'package_id' => $pre['package_id'] ?? null,
-                        'referred_by' => null,
-                ]);
-                    // If a referral code was provided in the pre-register data, try to resolve it
-                    if (! empty($pre['referral'])) {
-                        $refCode = $pre['referral'];
-                        $referrer = \App\Models\User::where('referral_code', $refCode)->first();
-                        if ($referrer) {
-                            $user->referred_by = $referrer->id;
-                            $user->save();
-                        }
-                    }
-                event(new \Illuminate\Auth\Events\Registered($user));
-                Auth::login($user);
-            }
-            // remove pre_register session now that we've created or logged in the user
-            $request->session()->forget('pre_register');
-        }
+    // In a production app you'd validate the notification from Midtrans signature
+    // NOTE: Do NOT create user accounts or write DB records here for pending payments.
+    // Guest account creation is postponed until we have a confirmed settlement so
+    // we avoid creating accounts for incomplete/abandoned payments.
 
         if (! $user) {
             // cannot associate ticket without a user; redirect home
             return redirect()->route('dashboard')->with('error', 'User not found after payment. Please contact support.');
         }
 
-        // For now, store a CoachingTicket and mark as used=false until webhook confirms settlement
-            $qty = (int) ($request->input('package_qty') ?: session('pre_register.package_qty') ?: 1);
-            $createdTickets = [];
-            for ($i = 0; $i < max(1, $qty); $i++) {
-                $createdTickets[] = CoachingTicket::create([
-                    'user_id' => $user->id,
-                    'source' => 'midtrans',
-                    'is_used' => false,
-                ]);
-            }
-
-        // ensure user's package_id persisted if provided in request or session
-        if ($request->input('package_id')) {
-            $user->package_id = $request->input('package_id');
-            $user->save();
-        }
-
-        // Decide redirect based on purchased package slug for better UX
-        $firstTicketId = !empty($createdTickets) && isset($createdTickets[0]) ? $createdTickets[0]->id : null;
-        $pkgId = $request->input('package_id') ?: $user->package_id;
-        $package = $pkgId ? \App\Models\Package::find($pkgId) : null;
-        $beginnerSlugs = ['beginner', 'intermediate'];
-        // Ensure buyers of beginner/intermediate packages receive at least one live coaching ticket
-        if ($package && isset($package->slug) && in_array($package->slug, $beginnerSlugs)) {
-            if (empty($createdTickets) || count($createdTickets) === 0) {
-                $ticket = CoachingTicket::create([
-                    'user_id' => $user->id,
-                    'source' => 'auto-grant',
-                    'is_used' => false,
-                ]);
-                $createdTickets[] = $ticket;
-                // ensure firstTicketId points to created ticket so thankyou can show it
-                $firstTicketId = $ticket->id;
-            }
-            // redirect to class-specific thank you page so student can start learning
-            return redirect()->route('kelas.thankyou', ['lesson' => $lesson->id])->with(['ticket_id' => $firstTicketId]);
-        }
+    // We no longer create tickets or assign package here. Tickets and package
+    // assignment will be created when we detect 'settlement' below (either
+    // from client-reported midtrans_result or via webhook).
+    $createdTickets = [];
+    $firstTicketId = null;
+    $pkgId = $request->input('package_id') ?: $user->package_id;
+    $package = $pkgId ? \App\Models\Package::find($pkgId) : null;
+    $beginnerSlugs = ['beginner', 'intermediate', 'upgrade-intermediate'];
 
         // Default: keep existing thank-you redirect (backwards compatible)
+        // If midtrans_result is provided (snap client returned), try to persist a Transaction
+        $midResRaw = $request->input('midtrans_result');
+        if (! empty($midResRaw)) {
+            $data = is_string($midResRaw) ? json_decode($midResRaw, true) : (array) $midResRaw;
+            $orderId = $data['order_id'] ?? $data['orderId'] ?? $request->input('order_id') ?? null;
+            $txnStatus = $data['transaction_status'] ?? $data['status'] ?? $data['status_code'] ?? null;
+            try {
+                if ($orderId) {
+                    $existing = Transaction::where('order_id', $orderId)->latest()->first();
+                    if (! $existing) {
+                        // Normalize status to either 'pending' or 'settlement'
+                        $normalized = 'pending';
+                        $lower = strtolower((string) ($txnStatus ?? ''));
+                        if (in_array($lower, ['settlement','capture','success'])) $normalized = 'settlement';
+
+                        // Do NOT persist a Transaction record if it's still pending. Only
+                        // create DB transaction when we already have settlement confirmed.
+                        if ($normalized === 'settlement') {
+                            // If guest flow provided pre_register, create/login user now before persisting
+                            if (! $user && $request->session()->has('pre_register')) {
+                                $pre = $request->session()->get('pre_register');
+                                $exists = \App\Models\User::where('email', $pre['email'])->exists();
+                                if ($exists) {
+                                    $user = \App\Models\User::where('email', $pre['email'])->first();
+                                    Auth::login($user);
+                                } else {
+                                    $user = \App\Models\User::create([
+                                        'name' => $pre['name'] ?? 'User',
+                                        'email' => $pre['email'],
+                                        'password' => \Illuminate\Support\Facades\Hash::make($pre['password'] ?? str()->random(12)),
+                                        'phone' => $pre['phone'] ?? null,
+                                        'package_id' => $pre['package_id'] ?? null,
+                                        'referred_by' => null,
+                                    ]);
+                                    if (! empty($pre['referral'])) {
+                                        $refCode = $pre['referral'];
+                                        $referrer = \App\Models\User::where('referral_code', $refCode)->first();
+                                        if ($referrer) {
+                                            $user->referred_by = $referrer->id;
+                                            $user->save();
+                                        }
+                                    }
+                                    event(new \Illuminate\Auth\Events\Registered($user));
+                                    Auth::login($user);
+                                }
+                                $request->session()->forget('pre_register');
+                            }
+
+                            Transaction::create([
+                                'order_id' => $orderId,
+                                'user_id' => $user->id ?? null,
+                                'package_id' => $pkgId ?? null,
+                                'method' => isset($data['payment_type']) ? strtoupper($data['payment_type']) : ($request->input('payment_method') ?? null),
+                                'amount' => $data['gross_amount'] ?? null,
+                                'original_amount' => $data['gross_amount'] ?? null,
+                                'status' => $normalized,
+                                'midtrans_response' => $data,
+                            ]);
+
+                            // grant tickets & package immediately when the client already reports settlement
+                            $qty = (int) ($request->input('package_qty') ?: session('pre_register.package_qty') ?: 1);
+                            for ($i = 0; $i < max(1, $qty); $i++) {
+                                $createdTickets[] = CoachingTicket::create([
+                                    'user_id' => $user->id,
+                                    'source' => 'midtrans',
+                                    'is_used' => false,
+                                ]);
+                            }
+                            if ($request->input('package_id') && $user) {
+                                $user->package_id = $request->input('package_id');
+                                $user->save();
+                            }
+                            $firstTicketId = !empty($createdTickets) && isset($createdTickets[0]) ? $createdTickets[0]->id : null;
+                            if ($package && isset($package->slug) && in_array($package->slug, $beginnerSlugs)) {
+                                return redirect()->route('kelas.thankyou', ['lesson' => $lesson->id])->with(['ticket_id' => $firstTicketId]);
+                            }
+                        } else {
+                            // pending: do not write DB transaction here. The webhook will
+                            // create the DB transaction on settlement. Keep user on payment
+                            // page / client polling will check transactionStatus endpoint.
+                        }
+                    } else {
+                        $existing->midtrans_response = array_merge(is_string($existing->midtrans_response) ? (json_decode($existing->midtrans_response, true) ?: []) : (array) $existing->midtrans_response, $data ?: []);
+                        if ($txnStatus) {
+                            $lower = strtolower((string) $txnStatus);
+                                $existing->status = in_array($lower, ['settlement','capture','success']) ? 'settlement' : 'pending';
+                                // If this update moved the txn into settlement, grant tickets & package now.
+                                if (in_array($lower, ['settlement','capture','success'])) {
+                                    // If guest flow provided pre_register, create/login user now before granting
+                                    if (! $user && $request->session()->has('pre_register')) {
+                                        $pre = $request->session()->get('pre_register');
+                                        $exists = \App\Models\User::where('email', $pre['email'])->exists();
+                                        if ($exists) {
+                                            $user = \App\Models\User::where('email', $pre['email'])->first();
+                                            Auth::login($user);
+                                        } else {
+                                            $user = \App\Models\User::create([
+                                                'name' => $pre['name'] ?? 'User',
+                                                'email' => $pre['email'],
+                                                'password' => \Illuminate\Support\Facades\Hash::make($pre['password'] ?? str()->random(12)),
+                                                'phone' => $pre['phone'] ?? null,
+                                                'package_id' => $pre['package_id'] ?? null,
+                                                'referred_by' => null,
+                                            ]);
+                                            if (! empty($pre['referral'])) {
+                                                $refCode = $pre['referral'];
+                                                $referrer = \App\Models\User::where('referral_code', $refCode)->first();
+                                                if ($referrer) {
+                                                    $user->referred_by = $referrer->id;
+                                                    $user->save();
+                                                }
+                                            }
+                                            event(new \Illuminate\Auth\Events\Registered($user));
+                                            Auth::login($user);
+                                        }
+                                        $request->session()->forget('pre_register');
+                                    }
+
+                                    $qty = (int) ($request->input('package_qty') ?: session('pre_register.package_qty') ?: 1);
+                                    for ($i = 0; $i < max(1, $qty); $i++) {
+                                        $createdTickets[] = CoachingTicket::create([
+                                            'user_id' => $user->id,
+                                            'source' => 'midtrans',
+                                            'is_used' => false,
+                                        ]);
+                                    }
+                                    if ($request->input('package_id') && $user) {
+                                        $user->package_id = $request->input('package_id');
+                                        $user->save();
+                                    }
+                                    $firstTicketId = !empty($createdTickets) && isset($createdTickets[0]) ? $createdTickets[0]->id : null;
+                                    if ($package && isset($package->slug) && in_array($package->slug, $beginnerSlugs)) {
+                                        return redirect()->route('kelas.thankyou', ['lesson' => $lesson->id])->with(['ticket_id' => $firstTicketId]);
+                                    }
+                                }
+                        }
+                        $existing->save();
+                    }
+                }
+            } catch (\Throwable $e) {
+                // don't break flow; webhook will still create DB txn later
+                Log::warning('paymentComplete: failed to persist midtrans_result', ['err' => $e->getMessage(), 'order_id' => $orderId ?? null]);
+            }
+
+            // If the client-side reported settlement already, redirect to thankyou with order_id
+            $lowerStat = strtolower((string) ($txnStatus ?? ''));
+            if (in_array($lowerStat, ['settlement','capture','success'])) {
+                // client already reported settlement; the grant logic above will have
+                // executed. Redirect to centralized thankyou page.
+                return redirect()->route('payments.thankyou', ['lesson' => $lesson->id, 'order_id' => $orderId]);
+            }
+
+            // If client reports pending/not-paid, keep the user on the payment page (do not redirect to thankyou)
+            // Include order_id so client-side polling or waiting UI can pick it up.
+            if (! in_array($lowerStat, ['settlement','capture','success'])) {
+            return redirect()->route('kelas.payment', ['lesson' => $lesson->id, 'order_id' => $orderId])
+                ->with('info', 'Pembayaran belum dikonfirmasi. Silakan selesaikan atau tunggu konfirmasi di halaman pembayaran.');
+            }
+        }
+
         return redirect()->route('kelas.thankyou', ['lesson' => $lesson->id])->with(['ticket_id' => $firstTicketId]);
     }
 
@@ -302,13 +445,25 @@ class KelasController extends Controller
     public function thankyou(Lesson $lesson)
     {
         $user = Auth::user();
-        // If an order_id query param exists, send user to the centralized payments.finish
+        // If an order_id query param exists, send user to the centralized payments.thankyou
         $orderId = request()->query('order_id') ?? request()->query('orderId') ?? null;
         if ($orderId) {
-            return redirect()->route('payments.finish', ['order_id' => $orderId]);
+            return redirect()->route('payments.thankyou', ['order_id' => $orderId]);
         }
 
         if (! $user) return redirect()->route('dashboard');
+
+        // Block access to thankyou page until we received settlement webhook from Midtrans
+        $hasSettlement = Transaction::where('user_id', $user->id)
+            ->whereIn('status', ['settlement','capture','success'])
+            ->whereNotNull('midtrans_response')
+            ->exists();
+
+        if (! $hasSettlement) {
+            // If we haven't recorded settlement yet, keep user on payment page
+            return redirect()->route('kelas.payment', ['lesson' => $lesson->id])
+                ->with('error', 'Pembayaran belum dikonfirmasi. Silakan selesaikan pembayaran di halaman pembayaran.');
+        }
 
         $package = null;
         if ($user->package_id) {

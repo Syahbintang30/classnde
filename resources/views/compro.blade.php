@@ -3,18 +3,17 @@
 @section('title', 'Nde Official')
 
 @section('content')
-<body>
+
     <!-- Preloader -->
     <div class="loader">
         <div class="loader-inner">
-            <svg width="120" height="220" viewBox="0 0 100 100" class="loading-spinner" version="1.1"
-                xmlns="http://www.w3.org/2000/svg">
+            <svg width="120" height="220" viewBox="0 0 100 100" class="loading-spinner" version="1.1" xmlns="http://www.w3.org/2000/svg">
                 <circle class="spinner" cx="50" cy="50" r="21" fill="#141414" stroke-width="2" />
             </svg>
         </div>
     </div>
 
-    <!-- Header -->
+    <!-- Header (local header used for the compro theme) -->
     <header class="header stopping">
         <div class="container">
             <div class="row">
@@ -44,16 +43,8 @@
         </div>
     </header>
 
-    <!-- Wrapper -->
-    <section id="wrapper">
-        <!-- isi konten di sini -->
-    </section>
-</body>
-
-
-
-<!-- Wrapper -->
-<div class="wrapper">
+    <!-- Page wrapper -->
+    <div class="wrapper">
     <!-- Hero Section -->
     <section class="hero">
         <div class="main-slider slider flexslider">
@@ -361,6 +352,45 @@
                     </div>
                 </div>
             </div>
+            <!-- Promo video player (Bunny CDN) -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="custom-card shadow p-4 rounded">
+                        @if(! empty($promo_title))
+                            <h5 class="mb-3 text-center" style="color: #ddd; font-weight:600;">{{ $promo_title }}</h5>
+                        @endif
+                        <div id="promo-player-container" style="position:relative;padding-top:56.25%;background:#000;border-radius:6px;overflow:hidden;">
+                            @php
+                                $promoGuid = $promo_bunny_guid ?? null;
+                                $promoThumb = null;
+                                if ($promoGuid) {
+                                    try {
+                                        $meta = \App\Http\Controllers\BunnyController::getVideoStatus($promoGuid);
+                                        // Bunny metadata may include 'thumbnailFileName' or 'thumbnail' fields
+                                        $thumbFile = null;
+                                        if (! empty($meta['thumbnailFileName'])) $thumbFile = $meta['thumbnailFileName'];
+                                        elseif (! empty($meta['thumbnail'])) $thumbFile = $meta['thumbnail'];
+                                        // fallback to 'thumbnail.jpg'
+                                        if (! $thumbFile) $thumbFile = 'thumbnail.jpg';
+                                        $promoThumb = \App\Http\Controllers\BunnyController::signThumbnailUrl($promoGuid, 300, $thumbFile);
+                                    } catch (\Throwable $e) {
+                                        $promoThumb = \App\Http\Controllers\BunnyController::cdnUrl($promoGuid) . '/thumbnail.jpg';
+                                    }
+                                }
+                            @endphp
+                            <div id="promo-video-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;background-size:cover;background-position:center;@if($promoThumb) background-image:url('{{ $promoThumb }}');@endif">
+                                <button id="promo-play-button" class="btn btn-primary" aria-label="Play promo" style="width:64px;height:64px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0;border:none;background:rgba(255,255,255,0.95);">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <path d="M8 5v14l11-7L8 5z" fill="#000"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <!-- video element will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
             
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
@@ -578,9 +608,89 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+    @push('scripts')
+    <script>
+        // Chart initialisation (keeps responsive behaviour)
+        (function(){
+            try{
+                const genderCtx = document.getElementById('genderChart');
+                if (genderCtx) {
+                    new Chart(genderCtx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Female', 'Male', 'Other'],
+                            datasets: [{ data: [50,49,1], backgroundColor: ['#0F172A','#BE185D','#6B21A8'], borderColor: '#1a1a1a', borderWidth:2 }]
+                        },
+                        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#fff'}}} }
+                    });
+                }
+
+                const locCtx = document.getElementById('locationChart');
+                if (locCtx) {
+                    new Chart(locCtx, {
+                        type: 'bar',
+                        data: { labels: ['Indonesia','Philippines','Malaysia','Others'], datasets:[{ label:'Audience (%)', data:[79.2,9.5,7.4,1.4], backgroundColor:['#1E3A8A','#9D174D','#7C3AED','#F59E0B'], borderRadius:8 }] },
+                        options: { responsive:true, maintainAspectRatio:false, scales:{ x:{ ticks:{ color:'#fff' }, grid:{ color:'rgba(255,255,255,0.1)' } }, y:{ beginAtZero:true, max:100, ticks:{ color:'#fff' }, grid:{ color:'rgba(255,255,255,0.1)' } } }, plugins:{ legend:{ labels:{ color:'#fff' } } } }
+                    });
+                }
+            } catch(e){ console.warn('Chart init failed', e); }
+        })();
     </script>
 
-    @stack('scripts')
-</body>
+    <script>
+        // Header hide-on-scroll and mobile menu toggle (kept compact)
+        (function(){
+            let lastScrollTop = 0; const navbar = document.querySelector('.header');
+            if (navbar) {
+                window.addEventListener('scroll', function(){
+                    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    navbar.style.top = scrollTop > lastScrollTop ? '-80px' : '0';
+                    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const mobileBut = document.querySelector('.mobile-but');
+                const mainMenu = document.querySelector('.main-menu');
+                if (!mobileBut || !mainMenu) return;
+                mobileBut.addEventListener('click', (e) => { e.preventDefault(); mainMenu.classList.toggle('active'); });
+                mainMenu.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => { if (window.innerWidth <= 990) mainMenu.classList.remove('active'); }));
+            });
+        })();
+    </script>
+
+    <script>
+        // Promo player logic: fetch signed URL and play using HLS or native
+        (function(){
+            const playBtn = document.getElementById('promo-play-button');
+            const placeholder = document.getElementById('promo-video-placeholder');
+            const container = document.getElementById('promo-player-container');
+
+            async function fetchPromoUrl(){
+                try{ const res = await fetch('/promo-stream'); const j = await res.json(); return j.url || null; }
+                catch(e){ console.warn('Failed to fetch promo stream', e); return null; }
+            }
+
+            function createAndPlay(url){
+                if(!url) return;
+                const existing = document.getElementById('promo-html5-player'); if(existing){ try{ existing.pause(); }catch(e){} existing.remove(); }
+                const v = document.createElement('video'); v.id='promo-html5-player'; v.controls=true; v.setAttribute('playsinline','');
+                v.style.position='absolute'; v.style.top='0'; v.style.left='0'; v.style.width='100%'; v.style.height='100%'; v.style.zIndex='2';
+                container.appendChild(v); if(placeholder) placeholder.style.display='none';
+
+                const attach = () => {
+                    if(window.Hls && Hls.isSupported()){ const hls = new Hls(); hls.loadSource(url); hls.attachMedia(v); hls.on(Hls.Events.MANIFEST_PARSED, function(){ v.play().catch(()=>{}); }); }
+                    else { v.src = url; v.addEventListener('loadedmetadata', () => v.play().catch(()=>{})); }
+                };
+
+                if(!window.Hls){ const s = document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/hls.js@latest'; s.async=true; s.onload=attach; s.onerror=attach; document.head.appendChild(s); }
+                else attach();
+            }
+
+            if(playBtn){ playBtn.addEventListener('click', async function(){ playBtn.disabled = true; playBtn.textContent = 'Loading...'; const url = await fetchPromoUrl(); if(!url){ playBtn.textContent = 'Unavailable'; return; } createAndPlay(url); }); }
+        })();
+    </script>
+
+    @endpush
 
 @endsection

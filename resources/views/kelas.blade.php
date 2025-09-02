@@ -3,6 +3,29 @@
 @section('title', ' Kelas Guitar')
 
 @section('content')
+<style>
+/* Responsive adjustments for lesson listing page */
+.kelas-container { box-sizing: border-box; }
+.sidebar { transition: transform .22s ease, visibility .22s ease; }
+/* ensure sidebar keeps approx 250px on larger screens even when inline styles are present */
+.sidebar[style] { width: 250px; }
+@media (max-width: 900px) {
+    .kelas-container { display: block !important; }
+    .sidebar { width: 100% !important; max-width: none !important; border-right: none !important; border-bottom:1px solid rgba(255,255,255,0.04); padding:12px !important; }
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 290px; transform: translateX(-110%); background: #0b0b0b; z-index: 1200; overflow-y: auto; }
+    .sidebar.active { transform: translateX(0); }
+    .main-wrapper { margin-left: 0 !important; padding: 12px !important; }
+    /* backdrop element style (created in JS) */
+    #sidebar-backdrop { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); opacity: 0; visibility: hidden; transition: opacity .18s ease; z-index: 1100; }
+    #sidebar-backdrop.visible { opacity: 1; visibility: visible; }
+    /* small header toggle button */
+    .mobile-sidebar-toggle { display:inline-flex; align-items:center; gap:8px; background:transparent; border:1px solid rgba(255,255,255,0.06); padding:8px 10px; border-radius:8px; color:inherit; cursor:pointer; }
+}
+@media (min-width: 901px) {
+    .mobile-sidebar-toggle { display:none; }
+}
+</style>
+
 <div class="kelas-container" style="display: flex;">
     <!-- Sidebar -->
     <aside class="sidebar" style="width: 250px; border-right:1px solid #ccc; padding:1rem;">
@@ -48,6 +71,11 @@
     <!-- Main Content -->
     <div class="main-wrapper" style="flex:1; padding:1rem;">
     <!-- local navbar removed to use global navbar from layouts.app -->
+
+        <!-- Mobile: sidebar open button -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Open menu">☰ Menu</button>
+        </div>
 
 
         <!-- Topik Content -->
@@ -631,13 +659,13 @@ document.addEventListener('DOMContentLoaded', () => {
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 .kelas-container { display:flex; }
-.sidebar { width:250px; border-right:1px solid #222; padding:1rem; background:#0f0f0f; }
+.sidebar { width:250px; border-right:1px solid #222; padding:1rem; background:#0f0f0f; position:fixed; top:0; left:0; height:100vh; z-index:10001; }
 .lesson-title { font-weight:400; margin-top:0; font-size:15px; color:#cfcfcf; }
 .lesson-block .lesson-title { transition: color .12s ease, font-weight .12s ease; }
 .lesson-block.active .lesson-title { color:#fff; font-weight:700; }
 .topic-item { cursor:pointer; padding-left:1rem; font-size:13px; color:#bfbfbf; }
 .topic-item.disabled { color:#999; cursor:default; }
-.main-wrapper { flex:1; padding:1rem; }
+.main-wrapper { flex:1; padding:1rem; margin-left:250px; }
 .topic-item.completed { color: #9fd19f; }
 
 /* Use Roboto font for page */
@@ -739,7 +767,7 @@ body, .main-wrapper, .sidebar, .kelas-container { font-family: 'Inter', 'Poppins
 /* Responsive: mobile-friendly layout */
 @media (max-width: 900px) {
     .kelas-container { flex-direction:row; }
-    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 300px; max-width: 80%; transform: translateX(-110%); transition: transform .28s ease; z-index: 1200; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+    .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 300px; max-width: 80%; transform: translateX(-110%); transition: transform .28s ease; z-index: 10001; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
     .sidebar.active { transform: translateX(0); }
     /* backdrop when sidebar is open */
     #sidebar-backdrop { position:fixed; inset:0; background: rgba(0,0,0,0.5); opacity:0; transition: opacity .22s ease; z-index:1100; display:none; }

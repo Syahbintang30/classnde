@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use App\Rules\NotDisposableEmail;
+use App\Rules\AllowedEmailDomain;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -29,15 +31,31 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $messages = [
+            'name.required' => 'Nama wajib diisi.',
+            'name.max' => 'Nama terlalu panjang (maks 255 karakter).',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.max' => 'Email terlalu panjang (maks 255 karakter).',
+            'email.unique' => 'Email sudah terdaftar. Jika ini milik Anda, silakan login atau gunakan fitur lupa password.',
+            'password.required' => 'Password wajib diisi.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'password.min' => 'Password harus minimal :min karakter.',
+            'phone.max' => 'Nomor telepon terlalu panjang.',
+            'selected_package.exists' => 'Pilihan paket tidak valid.',
+        ];
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            // enforce rfc + dns checks to ensure email domain exists (helps ensure real email addresses)
+            // require allowed domain (public whitelist). Admin-reserved domain cannot be used for public registration.
+            'email' => ['required', 'string', 'lowercase', 'email:rfc,dns', new NotDisposableEmail(), new AllowedEmailDomain(false), 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'phone' => ['nullable', 'string', 'max:30'],
             'referral' => ['nullable', 'string', 'max:64'],
             'selected_package' => ['nullable', 'integer', 'exists:packages,id'],
             'package_id' => ['nullable', 'integer', 'exists:packages,id'],
-        ]);
+        ], $messages);
 
         // If the form included a selected package, don't create the user yet.
         // Store registration data in session temporarily and redirect to the purchase/payment page.
@@ -60,7 +78,7 @@ class RegisteredUserController extends Controller
         }
 
         // No package selected: proceed with normal immediate registration flow
-        $user = User::create([
+    $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -78,15 +96,16 @@ class RegisteredUserController extends Controller
                 $user->referred_by = $referrer->id;
                 $user->save();
             } else {
-                // invalid referral code supplied — reject the registration with message
-                return redirect()->back()->withInput()->withErrors(['referral' => 'Referral code not valid.']);
+                // invalid referral code supplied — reject the registration with a friendly Indonesian message
+                return redirect()->back()->withInput()->withErrors(['referral' => 'Kode referral tidak valid. Periksa kembali kode yang Anda masukkan.']);
             }
         }
 
-        event(new Registered($user));
+    // Dispatch Registered event (this will queue the email verification notification)
+    event(new Registered($user));
 
-        Auth::login($user);
-
-    return redirect(route('registerclass', absolute: false));
+    // Do NOT auto-login. Require the user to verify their email first.
+    // Redirect to the verification notice page with a status message.
+    return redirect()->route('verification.notice')->with('status', 'A verification link has been sent to your email address. Please open it to verify your account.');
     }
 }

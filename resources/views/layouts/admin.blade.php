@@ -30,6 +30,7 @@
                     <li class="nav-item"><a class="nav-link text-dark" href="{{ route('admin.packages.index') }}">Packages</a></li>
                     <li class="nav-item"><a class="nav-link text-dark" href="{{ route('admin.transactions.index') }}">Transactions</a></li>
                     <li class="nav-item"><a class="nav-link text-dark" href="{{ route('admin.vouchers.index') }}">Vouchers</a></li>
+                    <li class="nav-item"><a class="nav-link text-dark" href="{{ route('admin.videopromo') }}">Company Profile</a></li>
                     <li class="nav-item"><a class="nav-link text-dark" href="{{ route('admin.payment-methods.index') }}">Payment Methods</a></li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle text-dark" href="#" id="adminReferralMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">Referral</a>
