@@ -59,6 +59,10 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ]
+        ,
+        "verify-no-secrets": [
+            "@php scripts/detect_secrets.php"
+        ]
     },
     "extra": {
         "laravel": {

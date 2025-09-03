@@ -155,7 +155,7 @@ class KelasController extends Controller
         }
 
         $order = [
-            'order_id' => 'ORDER-' . time() . '-' . ($user->id ?? 'guest'),
+            'order_id' => \App\Services\OrderIdGenerator::generate('nde'),
             'gross_amount' => $grossAmount,
             'original_amount' => $rawAmount,
             'applied_referral_percent' => $appliedReferralPercent,
@@ -212,7 +212,7 @@ class KelasController extends Controller
         }
 
         $order = [
-            'order_id' => 'ORDER-' . time() . '-' . ($user->id ?? 'guest'),
+            'order_id' => \App\Services\OrderIdGenerator::generate('nde'),
             'gross_amount' => $grossAmount,
             'original_amount' => $rawAmount,
             'applied_referral_percent' => $appliedReferralPercent,
@@ -302,10 +302,24 @@ class KelasController extends Controller
                                     $user = \App\Models\User::where('email', $pre['email'])->first();
                                     Auth::login($user);
                                 } else {
+                                    // Decrypt stored pre_register password if present, otherwise generate a random one
+                                    $plainPassword = null;
+                                    try {
+                                        if (! empty($pre['password'])) {
+                                            $plainPassword = \Illuminate\Support\Facades\Crypt::decryptString($pre['password']);
+                                        }
+                                    } catch (\Throwable $e) {
+                                        // decryption failed - ignore and fallback to random password
+                                        $plainPassword = null;
+                                    }
+                                    if (empty($plainPassword)) {
+                                        $plainPassword = str()->random(12);
+                                    }
+
                                     $user = \App\Models\User::create([
                                         'name' => $pre['name'] ?? 'User',
                                         'email' => $pre['email'],
-                                        'password' => \Illuminate\Support\Facades\Hash::make($pre['password'] ?? str()->random(12)),
+                                        'password' => \Illuminate\Support\Facades\Hash::make($plainPassword),
                                         'phone' => $pre['phone'] ?? null,
                                         'package_id' => $pre['package_id'] ?? null,
                                         'referred_by' => null,

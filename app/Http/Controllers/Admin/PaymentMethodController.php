@@ -8,6 +8,7 @@ use App\Models\PaymentMethod;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
+use App\Services\OrderIdGenerator;
 
 class PaymentMethodController extends Controller
 {
@@ -132,7 +133,7 @@ class PaymentMethodController extends Controller
         $serverKey = config('services.midtrans.server_key');
         if (! $serverKey) return response()->json(['error' => 'Midtrans server key not configured'], 500);
 
-        $orderId = 'TEST-' . time();
+    $orderId = OrderIdGenerator::generate('nde');
         $gross = 1000; // small test amount
 
         $payload = [

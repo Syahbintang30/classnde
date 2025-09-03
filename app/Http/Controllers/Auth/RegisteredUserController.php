@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rules;
 use App\Rules\NotDisposableEmail;
 use App\Rules\AllowedEmailDomain;
@@ -62,11 +63,16 @@ class RegisteredUserController extends Controller
         if ($request->filled('selected_package') || $request->filled('package_id')) {
             $pkg = $request->input('selected_package') ?: $request->input('package_id');
             // Keep registration input in session until payment completes. We'll create the user after payment.
+            // Encrypt the password before storing it in session to avoid plaintext on disk.
+            $encrypted = null;
+            if ($request->filled('password')) {
+                $encrypted = Crypt::encryptString($request->input('password'));
+            }
             $request->session()->put('pre_register', [
                 'name' => $request->input('name'),
                 'email' => $request->input('email'),
                 'phone' => $request->input('phone'),
-                'password' => $request->input('password'), // plain for now; will hash when creating the user after payment
+                'password' => $encrypted, // encrypted; will be decrypted when creating the user after payment
                 'referral' => $request->input('referral') ?: $request->session()->get('referral') ?: null,
                 'package_id' => $pkg,
                 'package_qty' => $request->input('package_qty') ? intval($request->input('package_qty')) : 1,

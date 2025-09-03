@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 use App\Models\Transaction;
 use App\Models\Voucher;
 use Illuminate\Support\Str;
+use App\Services\OrderIdGenerator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
@@ -74,8 +75,8 @@ class MidtransController extends Controller
             }
         }
 
-        // create an external order id that Midtrans will use (use timestamp+random to ensure unique)
-        $externalOrderId = 'nde-' . time() . '-' . Str::random(6);
+    // create an external order id that Midtrans will use (use canonical generator)
+    $externalOrderId = OrderIdGenerator::generate('nde');
 
     // Persist pending order metadata in cache only. Do NOT create DB Transaction yet.
     $qty = (int) ($data['package_qty'] ?? 1);

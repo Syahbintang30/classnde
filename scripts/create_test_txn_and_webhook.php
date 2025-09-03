@@ -10,12 +10,13 @@ use App\Models\Package;
 use Illuminate\Http\Request;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Str;
+use App\Services\OrderIdGenerator;
 
 $user = User::first();
 $package = Package::first();
 if (! $user || ! $package) { echo "Need at least one user and one package in DB\n"; exit(1); }
 
-$externalOrderId = 'test-'.time().'-'.Str::random(6);
+$externalOrderId = OrderIdGenerator::generate('nde');
 $txn = Transaction::create([
     'order_id' => $externalOrderId,
     'user_id' => $user->id,
