@@ -278,7 +278,7 @@
         keys.forEach(d=>{
             const div = document.createElement('div');
             div.className = 'mb-2';
-            const hrs = pendingEntries[d].map(h=>`<span class="badge bg-info text-dark me-1">${h}</span>`).join('');
+            const hrs = pendingEntries[d].map(h=>`<span class="badge bg-info text-white me-1">${h}</span>`).join('');
             div.innerHTML = `<div class="d-flex justify-content-between align-items-start"><div><strong>${d}</strong><div class="mt-1">${hrs}</div></div><div><button class="btn btn-sm btn-outline-danger">Remove</button></div></div>`;
             div.querySelector('button').addEventListener('click', ()=>{ delete pendingEntries[d]; renderPending(); if(Object.keys(pendingEntries).length===0) document.getElementById('saveAllBtn').disabled = true; });
             list.appendChild(div);

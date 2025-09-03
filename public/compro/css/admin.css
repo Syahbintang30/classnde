@@ -1,0 +1,764 @@
+/* ======================
+        Admin Navbar
+   ====================== */
+.navbar{
+    padding: 0 !important;
+}
+.admin-nav {
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+}
+
+.admin-nav .nav-wrap {
+    background: #000;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.admin-nav .nav-inner {
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 14px;
+    gap: 18px;
+}
+
+/* Make primary admin text white for consistent dark theme */
+body, .content-wrapper, .card, .card-body, .custom-table, .custom-table th, .custom-table td, .modal_content {
+    color: #fff !important;
+}
+
+/* Ensure links in content are visible */
+.content a, a.btn-add, .admin-nav .nav-links a, .admin-nav .dropdown-item {
+    color: #fff !important;
+}
+
+/* Brand */
+.admin-nav .navbar-brand {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    transition: transform .18s ease, filter .18s ease;
+}
+.admin-nav .navbar-brand:hover {
+    transform: translateY(-3px);
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,0.6));
+    color: #fff;
+}
+
+/* Links */
+.admin-nav .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.admin-nav .nav-links a {
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    position: relative;
+    padding: 6px 18px;
+    transition: color .15s ease, transform .15s ease;
+}
+.admin-nav .nav-links a:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -6px;
+    width: 0;
+    height: 2.5px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #ffd166, #ff6b6b);
+    transition: width .22s cubic-bezier(.2,.9,.2,1);
+}
+.admin-nav .nav-links a:hover {
+    color: #fff;
+    transform: translateY(-3px);
+}
+.admin-nav .nav-links a:hover:before,
+.admin-nav .nav-links a.active:before {
+    width: 100%;
+}
+.admin-nav .nav-links a.active {
+    color: #fff;
+}
+
+/* User dropdown */
+.admin-nav .nav-username {
+    color: rgba(255,255,255,0.92);
+    font-weight: 600;
+}
+
+/* Dropdown menu overrides (Bootstrap) */
+.admin-nav .dropdown-menu {
+    background: rgba(18,18,18,0.76);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.65);
+}
+.admin-nav .dropdown-item {
+    color: #d1d5db;
+    transition: background .15s ease, color .15s ease;
+}
+.admin-nav .dropdown-item:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+.admin-nav .nav-link.show {
+    color: #d1d5db !important;
+}
+
+/* Logout button */
+.admin-nav .dropdown-item button {
+    color: #d1d5db;
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    text-align: left;
+    width: 100%;
+    transition: background .15s ease, color .15s ease;
+}
+.admin-nav .dropdown-item button:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+
+.admin-nav .navbar-toggler {
+    background: rgba(255,255,255);
+    border: none;
+    border-radius: 8px;
+    color: rgba(255,255,255,.8);
+    padding: 8px;
+}
+
+.admin-nav .navbar-toggler-icon {
+  --bs-navbar-toggler-icon-bg: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Cpath stroke='black' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.3' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E") !important;
+}
+
+@media (max-width: 1199.98px) {
+  .navbar-collapse {
+    width: 100%;
+    position: absolute;
+    top: 100%; 
+    left: 0;
+    background-color: #000; 
+    z-index: 999;
+    padding: 1rem 0 2rem 0;
+  }
+
+  .navbar-collapse .nav-links {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .navbar-collapse .nav-item {
+    text-align: center;
+    padding: 0 1rem;
+  }
+
+  .navbar-toggler {
+    margin-left: 0.5rem; 
+  }
+}
+
+/* Contetn */
+
+.content a {
+    font-size: 14px ;
+}
+
+/* Header */
+.header h2 {
+    color: #fff;
+    font-size: 20px ;
+    font-weight: 700 ;
+    align-items: center;
+    text-transform: capitalize;
+    margin: 0;
+}
+
+.header p{
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 7px;
+}
+
+.btn-add {
+    background-color: #111;
+    color: #fff;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.12s ease;
+    border: 1px solid #2a2a2a;
+}
+
+.btn-add:hover {
+    background-color: #1a1a1a;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+/* Card Table */
+.card-table {
+    background-color: rgba(255,255,255,0.03);
+    border-radius: 1rem;
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+    border: 1px solid #222;
+    box-shadow: 0 3px 15px rgba(0,0,0, 0.3);
+}
+
+/* Dark card general */
+.card.shadow-sm {
+    background-color: rgba(10,10,10,0.7);
+    border: 1px solid #212121;
+    color: #fff;
+}
+.card.shadow-sm .card-body {
+    background: transparent;
+    color: #fff;
+}
+
+/* Table */
+.custom-table {
+    width: 100%;
+}
+
+.custom-table thead th {
+    text-align: left;
+    padding: 1.05rem 1.3rem;
+    color: #fff;
+    font-weight: 700;
+    border-bottom: 1px solid #2a2a2a;
+    background: rgba(10,10,10,0.6);
+}
+
+.custom-table tbody tr {
+    border-radius: 8px;
+}
+
+.custom-table td {
+    color: #fff;
+    padding: 1.25rem 1.5rem;
+    vertical-align: middle;
+}
+
+.custom-table tbody tr:hover td {
+    background-color: #2a2a2a;
+}
+
+.custom-table td, 
+.custom-table th {
+  border-right: 1px solid #333; 
+  color: #fff;
+}
+
+.custom-table td:first-child,
+.custom-table th:first-child {
+  border-left: none;
+}
+
+.custom-table td:last-child,
+.custom-table th:last-child {
+  border-right: none;
+}
+
+/* Action Buttons */
+.actions .icon-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.actions .icon-btn:hover {
+    color: #ff6b6b;
+    transform: scale(1.2);
+}
+
+/* Pagination */
+.pagination{
+    margin-top: .5rem;
+}
+
+.pagination .page-link {
+    background-color: transparent;
+    color: #d1d5db;
+    margin: 0 0.2rem;
+    border: 1px solid #2a2a2a;
+    width: 2.2rem;
+    height: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.pagination .page-link:hover {
+    background-color: #1f1f1f;
+    color: #fff;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(90deg,#222,#333);
+    color: #fff;
+    border: 1px solid #444;
+}
+
+/* Dark variant for previously white tables — matches admin base UI */
+.light-custom-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: rgba(8,8,8,0.95);
+    color: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.04);
+}
+.light-custom-table th,
+.light-custom-table td{
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: #e6eef8;
+}
+.light-custom-table thead th{
+    background: linear-gradient(180deg, rgba(16,16,16,0.95), rgba(10,10,10,0.95));
+    font-weight: 700;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.light-custom-table tbody tr:hover td{
+    background: rgba(255,255,255,0.02);
+}
+.light-custom-table td.actions .icon-btn{
+    color: #fff;
+}
+.light-custom-table td:first-child, .light-custom-table th:first-child{
+    padding-left: 18px;
+}
+.light-custom-table td:last-child, .light-custom-table th:last-child{
+    padding-right: 18px;
+}
+
+.small.text-muted {
+    margin-top: 0.5rem;
+    color: #fff !important;
+}
+
+form .label{
+    color: #fff;
+    display: block;
+    margin-bottom: 8px;
+}
+
+form .input{
+    display: block;
+    margin-bottom: 8px;
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 4px;
+}
+
+form .form-control{
+    background-color: transparent;
+    border: 1px solid #333;
+    color: #fff;
+}
+
+form .form-control:focus{
+    background-color: rgba(255,255,255,0.03);
+    color: #fff;
+    border-color: #4b4b4b;
+    box-shadow: none;
+}
+
+form .form-control:disabled{
+    background-color: #999;
+    color: #000;
+}
+
+.form-text, .form-text.text-muted, form small{
+        color: #fff !important;
+}
+
+/* placeholder styling */
+
+/* Force cards to be dark (override any default white .card) */
+.card {
+    background-color: rgba(8,8,8,0.9) !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
+    color: #fff !important;
+}
+.card .card-body {
+    background: transparent !important;
+    color: #fff !important;
+}
+
+/* Specifically override the inline-styled filter container used in transactions view */
+.card .card-body > div[style] {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    padding: 12px !important;
+    display: flex !important;
+    gap: 12px !important;
+    align-items: center !important;
+}
+
+/* Make form controls dark */
+.form-select, .form-control, .form-select.form-select-sm, .input-group .form-control, input[type="date"] {
+    background-color: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    color: #fff !important;
+}
+.input-group-text {
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    color: #fff !important;
+}
+
+/* Outline buttons used in filter presets */
+.btn-outline-secondary, .btn-outline-danger {
+    background: transparent !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+}
+
+/* Make the small input (search) dark too */
+.card .card-body .form-control[placeholder], .card .card-body input[placeholder] {
+    color: #fff !important;
+}
+
+/* Style native select dropdowns and options for dark theme; works in most browsers */
+.form-select, select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: rgba(255,255,255,0.02) !important;
+    color: #fff !important;
+}
+.form-select option, select option {
+    background-color: #090909 !important;
+    color: #fff !important;
+}
+.form-select:focus, select:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.03) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+}
+
+/* Date input tweaks (WebKit-based browsers) */
+input[type="date"] {
+    color: #fff !important;
+    background-color: rgba(255,255,255,0.02) !important;
+}
+input[type="date"]::-webkit-datetime-edit {
+    color: #fff !important;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) contrast(120%) !important;
+}
+
+/* Firefox date icon */
+input[type="date"]::-moz-focus-inner {
+    color: #fff !important;
+}
+
+/* Ensure dropdown expansion arrow isn't white-on-white in some browsers */
+.form-select::-ms-expand {
+    filter: invert(1) !important;
+}
+
+/* Fallback: when browser refuses to style native dropdown menu, provide a small dark backdrop */
+.form-select[aria-expanded="true"]{
+    background-color: rgba(0,0,0,0.95) !important;
+}
+input::placeholder,
+textarea::placeholder,
+input::-webkit-input-placeholder,
+textarea::-webkit-input-placeholder {
+    color: #fff !important;
+}
+
+input[type="file"] {
+    color: #fff; /* 'No file chosen' text */
+}
+
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button {
+    background: #111;
+    color: #fff;
+    border: 1px solid #333;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.select-menu{
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.select-menu .select-btn{
+    display: flex;
+    height: 55px;
+    background: #111;
+    border: 1px solid #333;
+    color: rgba(255,255,255, 1);
+    padding: 20px;
+    font-size: 16px;
+    font-weight: 400;
+    border-radius: 4px;
+    align-items: center;
+    cursor: pointer;
+    justify-content: space-between;
+}
+
+.select-btn i{
+    font-size: 16px;
+    transition: 0.3s;
+}
+
+.select-menu.active .select-btn i{
+    transform: rotate(-180deg);
+}
+
+.select-menu .options{
+    position: relative;
+    padding: 20px;
+    margin-top: 10px;
+    border-radius: 4px;
+    background-color: #111;
+    border: 1px solid #333;
+    display: none;
+}
+
+.select-menu.active .options{
+    display: block;
+    gap: 4px;
+}
+
+.options .option{
+    display: flex;
+    height: 55px;
+    cursor: pointer;
+    padding: 0 16px;
+    border-radius: 4px;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+.options .option:last-child {
+    border-bottom: none;
+}
+
+.options .option:hover{
+    background: #333;
+}
+
+.option .option-text{
+    font-size: 16px;
+    color: #fff;
+}
+
+.btn-submit {
+    background: #fff;
+    color: #000;
+    padding: 10px 36px;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 14px;
+    border: none;
+    text-transform: uppercase;
+}
+
+.btn-back{
+    color: #fff;
+    padding: 10px 26px;
+    background-color: transparent;
+    border-radius: 24px;
+    font-weight: 500;
+    font-size: 14px;
+    border: 1px solid #fff;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.modal-confirm {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal_content {
+    background-color: rgba(20,20,20,.9);
+    color: #fff;
+    padding: 24px;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+    box-shadow: 0 5px 5px rgba(255,255,255,0.08);
+    border: 1px solid #333;
+}
+
+.modal_content .actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* === Global Admin Dark Theme Overrides ===
+   Centralized overrides to ensure all admin pages use dark black background
+   and white text. These rules are intentionally specific and use !important
+   only where necessary to override Bootstrap defaults. */
+
+body {
+    background: #060606 !important;
+    color: #fff !important;
+}
+
+/* Ensure containers and common layout blocks are dark */
+.container, .container-fluid, .content-wrapper, .main, .card, .card-body, .table-responsive {
+    background: transparent !important;
+    color: #fff !important;
+}
+
+/* Cards */
+.card {
+    background-color: #070707 !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
+    color: #fff !important;
+}
+.card .card-body { background: transparent !important; }
+
+/* Tables (general) */
+table.table, .table thead, .table tbody, .table th, .table td {
+    color: #fff !important;
+}
+.table thead th {
+    background: #0a0a0a !important;
+    color: #fff !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+.table tbody tr td {
+    background: transparent !important;
+}
+.table.table-hover tbody tr:hover td {
+    background: rgba(255,255,255,0.02) !important;
+}
+.table th, .table td {
+    border-color: rgba(255,255,255,0.04) !important;
+}
+
+/* Form controls */
+.form-control, .form-select, textarea, input[type="text"], input[type="email"], input[type="number"], input[type="date"] {
+    background-color: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    color: #fff !important;
+}
+.form-control:focus, .form-select:focus {
+    background-color: rgba(255,255,255,0.03) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+    box-shadow: none !important;
+}
+
+/* Buttons: keep color contrast for primary/outline types */
+.btn, .btn-outline-primary, .btn-outline-secondary, .btn-primary, .btn-secondary {
+    color: #fff !important;
+}
+.btn-primary { background-color: #1f6feb !important; border-color: #175bd1 !important; }
+.btn-outline-primary { background: transparent !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+.btn-outline-secondary { background: transparent !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+.btn:disabled, .btn.disabled { opacity: 0.6; }
+
+/* Badges */
+.badge { color: #fff !important; }
+.badge.bg-success { background-color: #198754 !important; }
+.badge.bg-danger { background-color: #dc3545 !important; }
+.badge.bg-warning { background-color: #ffc107 !important; color: #000 !important; }
+
+/* Dropdowns / menus */
+.dropdown-menu, .dropdown-item {
+    background: rgba(10,10,10,0.98) !important;
+    color: #e6eef8 !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
+}
+.dropdown-item:hover { background: rgba(255,255,255,0.04) !important; color: #fff !important; }
+
+/* Pagination */
+.pagination .page-link { background: transparent !important; color: #d1d5db !important; border: 1px solid rgba(255,255,255,0.04) !important; }
+.pagination .page-item.active .page-link { background: linear-gradient(90deg,#222,#2b2b2b) !important; color: #fff !important; }
+
+/* Modals and overlays */
+.modal, .modal-backdrop, .modal-inner, .modal_content {
+    background: rgba(6,6,6,0.95) !important;
+    color: #fff !important;
+}
+.modal .modal-dialog .modal-content { background: #0b0b0b !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.04) !important; }
+
+/* Toasts */
+.toast.text-bg-secondary { background: #0b0b0b !important; color: #fff !important; }
+.toast.text-bg-success { background: #198754 !important; color: #fff !important; }
+
+/* Small muted text: use light gray rather than Bootstrap default dim */
+.text-muted, .small.text-muted { color: rgba(255,255,255,0.6) !important; }
+
+/* Links */
+a, a.btn, .admin-nav .nav-links a, .admin-nav .dropdown-item { color: #fff !important; }
+
+/* Make sure any inline white backgrounds are visually overridden */
+[style*="background:#fff"], [style*="background: #fff"] {
+    background: transparent !important;
+    color: #fff !important;
+}
+
+/* safe defaults for svg icons and images that assume dark text */
+img, svg { filter: none !important; }
+
+/* End global admin theme overrides */
+
+/* === Overrides for list groups, alerts and small components (Payment Methods page) === */
+.list-group {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
+    border-radius: 8px;
+}
+.list-group-item {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255,255,255,0.03) !important;
+    color: #fff !important;
+}
+.list-group-item:last-child { border-bottom: none !important; }
+.list-group-item .form-label, .list-group-item label { color: rgba(255,255,255,0.9) !important; }
+.list-group-item .form-control, .list-group-item .form-control-sm { background: rgba(255,255,255,0.02) !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+.list-group-item .form-control:focus { box-shadow: none !important; border-color: rgba(255,255,255,0.12) !important; }
+
+/* Alerts (success/error) */
+.alert { background: rgba(15,15,15,0.95) !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.04) !important; }
+.alert.alert-success { background: rgba(24,135,84,0.12) !important; color: #dff0d8 !important; }
+.alert.alert-danger { background: rgba(220,53,69,0.08) !important; color: #f8d7da !important; }
+
+/* Form-check inside list items */
+.form-check, .form-check-input, .form-check-label { color: #fff !important; }
+

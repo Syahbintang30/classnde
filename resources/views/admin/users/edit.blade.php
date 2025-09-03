@@ -3,31 +3,54 @@
 @section('title','Edit User')
 
 @section('content')
-<h3>Edit User: {{ $user->name }}</h3>
+<div class="header mb-4">
+    <h2>Edit User {{ $user->name }}</h2>
+</div>
 
 <form method="POST" action="{{ route('admin.users.update', $user->id) }}">
     @csrf
-    <div class="mb-3">
-        <label class="form-label">Package</label>
-        <select name="package_id" class="form-control">
-            <option value="">- none -</option>
+    <div class="select-menu">
+        <label class="label">Package</label>
+        <input type="hidden" name="package_id" id="packageInput" value="{{ $user->package_id ?? '' }}">
+
+        <!-- Custom dropdown -->
+        <div class="select-btn">
+            <span class="btn-text">
+                @if($user->package_id)
+                    {{ $packages->firstWhere('id', $user->package_id)->name }}
+                @else
+                    - none -
+                @endif
+            </span>
+            <i class="ph ph-caret-down"></i>
+        </div>
+
+        <ul class="options">
+            <li class="option" data-value="">
+                <span class="option-text">- none -</span>
+            </li>
             @foreach($packages as $p)
-                <option value="{{ $p->id }}" {{ $user->package_id == $p->id ? 'selected' : '' }}>{{ $p->name }}</option>
+                <li class="option" data-value="{{ $p->id }}">
+                    <span class="option-text">{{ $p->name }}</span>
+                </li>
             @endforeach
-        </select>
+        </ul>
+    </div>
+
+    <div class="mb-3">
+        <label class="label">Available Tickets</label>
+        <input type="number" name="available_tickets" class="form-control input" value="{{ old('available_tickets', $available) }}" min="0" />
+        <small class="form-text">Reducing available tickets will mark the newest unused tickets as "used" for audit (they will not be deleted).</small>
     </div>
     <div class="mb-3">
-        <label class="form-label">Available Tickets</label>
-        <input type="number" name="available_tickets" class="form-control" value="{{ old('available_tickets', $available) }}" min="0" />
-        <small class="form-text text-muted">Reducing available tickets will mark the newest unused tickets as "used" for audit (they will not be deleted).</small>
+        <label class="label">Total Tickets</label>
+        <input type="number" class="form-control input" value="{{ $total ?? 0 }}" disabled />
+        <small class="form-text">Total tickets (used + unused). To change how many are available for use, edit "Available Tickets" above.</small>
     </div>
-    <div class="mb-3">
-        <label class="form-label">Total Tickets</label>
-        <input type="number" class="form-control" value="{{ $total ?? 0 }}" disabled />
-        <small class="form-text text-muted">Total tickets (used + unused). To change how many are available for use, edit "Available Tickets" above.</small>
+    <div class="d-flex justify-content-end mt-3 gap-3">
+        <button class="btn-submit">Update</button>
+        <a href="{{ route('admin.users.packages') }}" class="btn-back">Kembali</a>
     </div>
-    <button class="btn btn-primary">Save</button>
-    <a href="{{ route('admin.users.packages') }}" class="btn btn-secondary">Cancel</a>
 </form>
 
 @endsection

@@ -60,8 +60,8 @@ class PackageController extends Controller
         if ($request->hasFile('image')) {
             // delete old image if exists
             try {
-                if ($package->image && \Storage::disk('public')->exists($package->image)) {
-                    \Storage::disk('public')->delete($package->image);
+                if ($package->image && Storage::disk('public')->exists($package->image)) {
+                    Storage::disk('public')->delete($package->image);
                 }
             } catch (\Throwable $e) {
                 // ignore deletion errors
@@ -74,5 +74,11 @@ class PackageController extends Controller
         $package->update($data);
 
         return redirect()->route('admin.packages.index')->with('status', 'Package updated');
+    }
+    
+    public function destroy(Package $package)
+    {
+        $package->delete();
+        return redirect()->route('admin.packages.index')->with('success','package deleted');
     }
 }

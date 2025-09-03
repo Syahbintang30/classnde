@@ -3,6 +3,9 @@
 @section('title', 'Coaching Bookings')
 
 @section('content')
+    @push('styles')
+        <link rel="stylesheet" href="{{ asset('compro/css/admin-bookings.css') }}" />
+    @endpush
     <div class="container-fluid py-4">
         @include('admin.coaching._nav')
 
@@ -29,8 +32,8 @@
         <div class="card">
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
+                    <table class="table table-hover light-custom-table mb-0">
+                        <thead>
                             <tr>
                                 <th>User</th>
                                 <th>Notes</th>
@@ -147,8 +150,8 @@
         <div class="mt-3">{{ $bookings->appends(request()->query())->links() }}</div>
     </div>
     <!-- Reject reason modal -->
-    <div id="rejectModal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:2000;">
-        <div style="background:#fff;padding:18px;border-radius:8px;max-width:520px;margin:40px auto;position:relative;">
+    <div id="rejectModal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;align-items:center;justify-content:center;z-index:2000;">
+        <div class="modal-inner" style="padding:18px;border-radius:8px;max-width:520px;margin:40px auto;position:relative;">
             <button class="reject-modal-close" style="position:absolute;right:8px;top:8px;border:none;background:transparent;font-size:18px;">&times;</button>
             <h4 style="margin-top:0">Reason for rejection</h4>
             <form id="rejectModalForm">

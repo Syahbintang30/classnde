@@ -6,7 +6,7 @@
 <div class="container">
     <div class="row">
         <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
                 <h1 class="h4">Transactions</h1>
             </div>
 
@@ -43,8 +43,8 @@
                         </form>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-sm mb-0">
-                            <thead class="table-light">
+                        <table class="light-custom-table table-sm mb-0">
+                            <thead>
                                 <tr>
                                     <th>#</th>
                                     <th>Order ID</th>
@@ -83,49 +83,51 @@
 </div>
 @endsection
 
-        @section('scripts')
-        <script>
-        document.addEventListener('DOMContentLoaded', function(){
-            function formatDate(d){
-                const mm = String(d.getMonth()+1).padStart(2,'0');
-                const dd = String(d.getDate()).padStart(2,'0');
-                return d.getFullYear() + '-' + mm + '-' + dd;
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    function formatDate(d){
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        const dd = String(d.getDate()).padStart(2,'0');
+        return d.getFullYear() + '-' + mm + '-' + dd;
+    }
+
+    document.querySelectorAll('#txn-filter-form [data-preset]').forEach(btn=>{
+        btn.addEventListener('click', function(){
+            const preset = this.getAttribute('data-preset');
+            const today = new Date();
+            let from=null, to=null;
+            if (preset === 'today'){
+                from = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                to = new Date(from);
+            } else if (preset === 'week'){
+                const day = today.getDay();
+                const diff = (day === 0) ? -6 : (1 - day);
+                from = new Date(today);
+                from.setDate(today.getDate() + diff);
+                to = new Date(from);
+                to.setDate(from.getDate() + 6);
+            } else if (preset === 'month'){
+                from = new Date(today.getFullYear(), today.getMonth(), 1);
+                to = new Date(today.getFullYear(), today.getMonth()+1, 0);
             }
 
-            document.querySelectorAll('#txn-filter-form [data-preset]').forEach(btn=>{
-                btn.addEventListener('click', function(){
-                    const preset = this.getAttribute('data-preset');
-                    const today = new Date();
-                    let from=null, to=null;
-                    if (preset === 'today'){
-                        from = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                        to = new Date(from);
-                    } else if (preset === 'week'){
-                        // Monday as first day of week
-                        const day = today.getDay(); // 0 (Sun) - 6 (Sat)
-                        const diff = (day === 0) ? -6 : (1 - day); // shift to Monday
-                        from = new Date(today);
-                        from.setDate(today.getDate() + diff);
-                        to = new Date(from);
-                        to.setDate(from.getDate() + 6);
-                    } else if (preset === 'month'){
-                        from = new Date(today.getFullYear(), today.getMonth(), 1);
-                        to = new Date(today.getFullYear(), today.getMonth()+1, 0);
-                    }
-
-                    if (from && to){
-                        document.getElementById('filter-from').value = formatDate(from);
-                        document.getElementById('filter-to').value = formatDate(to);
-                        document.getElementById('txn-filter-form').submit();
-                    }
-                });
-            });
-
-            document.getElementById('preset-clear').addEventListener('click', function(){
-                document.getElementById('filter-from').value = '';
-                document.getElementById('filter-to').value = '';
+            if (from && to){
+                document.getElementById('filter-from').value = formatDate(from);
+                document.getElementById('filter-to').value = formatDate(to);
                 document.getElementById('txn-filter-form').submit();
-            });
+            }
         });
-        </script>
-        @endsection
+    });
+
+    const presetClear = document.getElementById('preset-clear');
+    if (presetClear){
+        presetClear.addEventListener('click', function(){
+            document.getElementById('filter-from').value = '';
+            document.getElementById('filter-to').value = '';
+            document.getElementById('txn-filter-form').submit();
+        });
+    }
+});
+</script>
+@endsection

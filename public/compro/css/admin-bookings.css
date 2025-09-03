@@ -1,0 +1,13 @@
+/* Page-specific dark tweaks for Coaching Bookings */
+/* Use the light-custom-table look (which is a dark table in our admin.css) */
+.light-custom-table thead th { background: linear-gradient(180deg, rgba(10,10,10,0.98), rgba(6,6,6,0.98)); color: #fff; }
+.light-custom-table td, .light-custom-table th { color: #e6eef8; }
+
+/* Make the reject modal match the dark theme */
+#rejectModal { background: rgba(0,0,0,0.6); }
+#rejectModal .modal-inner { background: #0b0b0b; color: #fff; }
+#rejectModal .reject-modal-close { color: #fff; }
+
+/* Ensure open session button looks good on dark bg */
+.open-session-btn.disabled { opacity: 0.6; pointer-events: none; }
+

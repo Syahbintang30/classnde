@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\admin\LessonController;
-use App\Http\Controllers\admin\PackageController;
+use App\Http\Controllers\Admin\LessonController;
+use App\Http\Controllers\Admin\PackageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\Admin\TopicController;
@@ -67,6 +67,7 @@ Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\EnsureAd
     Route::post('packages', [PackageController::class, 'store'])->name('packages.store');
     Route::get('packages/{package}/edit', [PackageController::class, 'edit'])->name('packages.edit');
     Route::put('packages/{package}', [PackageController::class, 'update'])->name('packages.update');
+    Route::delete('packages/{package}', [PackageController::class, 'destroy'])->name('packages.destroy');
     // Route to create a signed upload URL for direct-to-Bunny uploads
     // Temporarily use a closure to avoid calling controller dispatch while debugging
     Route::post('bunny/upload-url', function (\Illuminate\Http\Request $request) {
@@ -114,6 +115,8 @@ Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\EnsureAd
     Route::get('referral/settings', [\App\Http\Controllers\Admin\ReferralController::class, 'settingsForm'])->name('referral.settings.form');
     Route::post('referral/settings', [\App\Http\Controllers\Admin\ReferralController::class, 'saveSettings'])->name('referral.settings.save');
     Route::get('referral/leaderboard', [\App\Http\Controllers\Admin\ReferralController::class, 'leaderboard'])->name('referral.leaderboard');
+    // list users referred by a specific user (admin)
+    Route::get('referral/users/{referrer}', [\App\Http\Controllers\Admin\ReferralController::class, 'referredUsers'])->name('referral.users');
 
     // vouchers admin
     Route::get('vouchers', [\App\Http\Controllers\Admin\VoucherController::class, 'index'])->name('vouchers.index');

@@ -3,53 +3,70 @@
 @section('title', 'Payment Methods')
 
 @section('content')
-<div class="container">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h1 class="h4">Payment Methods</h1>
-            </div>
+<div class="content-wrapper">
+    <div class="d-flex justify-content-between align-items-center mb-4 header">
+        <div class="col-9" >
+            <h2 class="h4">Payment Methods</h2>
+            <p style="color:#666; font-size:14px">Mapping note: choose a Midtrans Type to let the system use Midtrans payment flows (e.g. QRIS, GoPay, Bank Transfer). If you select Bank Transfer, you must also choose a Bank for proper Midtrans configuration.</p> 
+        </div>
+        <a href="#" id="show-add-method" class="btn-add">+ Add Payment Method</a>
+    </div>   
+    
+    @if(session('status'))
+        <div class="alert alert-success" id="success-alert">
+            {{ session('status') }}
+        </div>
 
-            @if(session('status'))
-                <div class="alert alert-success">{{ session('status') }}</div>
-            @endif
+        <script>
+            setTimeout(function() {
+                let alert = document.getElementById('success-alert');
+                if (alert) {
+                    alert.style.transition = "opacity 0.5s ease";
+                    alert.style.opacity = "0";
+                    setTimeout(() => alert.remove(), 500);
+                }
+            }, 3000);
+        </script>
+    @endif
+    
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <strong>There were some problems with your input:</strong>
+            <ul class="mb-0">
+                @foreach($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-            <div class="mb-3">
-                <a href="#" id="show-add-method" class="btn btn-sm btn-outline-primary">+ Add Payment Method</a>
-            </div>
-
-            <div class="mb-2 text-muted small">Mapping note: choose a Midtrans Type to let the system use Midtrans payment flows (e.g. QRIS, GoPay, Bank Transfer). If you select Bank Transfer, you must also choose a Bank for proper Midtrans configuration.</div>
-
-            @if($errors->any())
-                <div class="alert alert-danger">
-                    <strong>There were some problems with your input:</strong>
-                    <ul class="mb-0">
-                        @foreach($errors->all() as $err)
-                            <li>{{ $err }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <div id="add-method-form" class="card mb-3 d-none">
-                <div class="card-body">
+            <div id="add-method-form" class="mb-3 d-none">
+                <div class="card-table">
                     <form method="POST" action="{{ route('admin.payment-methods.store') }}" enctype="multipart/form-data">
                         @csrf
-                        <div class="row g-2">
-                            <div class="col-md-3">
-                                <input name="name" class="form-control" placeholder="internal_name (e.g. BCA, gopay, QRIS)" required />
+                        <p class="text-white mt-2 mb-3" style="font-weight: 700">Add Payment</p>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="label">Internal Name</label>
+                                <input name="name" class="form-control input" placeholder="internal_name (e.g. BCA, gopay, QRIS)" required />
                             </div>
-                            <div class="col-md-3">
-                                <input name="display_name" class="form-control" placeholder="Display name (BCA / GoPay)" required />
+                            <div class="col-md-6">
+                                <label class="label">Display Name</label>
+                                <input name="display_name" class="form-control input" placeholder="Display name (BCA / GoPay)" required />
                             </div>
-                            <div class="col-md-3">
-                                <input name="account_details" class="form-control" placeholder="Account number / phone (optional)" />
+                        </div>
+
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <label class="label">Account Number</label>
+                                <input name="account_details" class="form-control input" placeholder="Account number / phone (optional)" />
                             </div>
-                            <div class="col-md-2">
-                                <input type="file" name="logo" accept="image/*" class="form-control" />
-                            </div>
-                            <div class="col-md-2">
-                                <select name="midtrans_code" class="form-control">
+                        </div>
+
+                        <div class="row mt-2 g-3">
+                            <div class="col-md-6 m-0">
+                                <label class="label">Midtrans Type</label>
+                                <select name="midtrans_code" class="form-control input">
                                     <option value="">-- Midtrans Type --</option>
                                     <option value="bank_transfer" {{ old('midtrans_code') == 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
                                     <option value="qris" {{ old('midtrans_code') == 'qris' ? 'selected' : '' }}>QRIS</option>
@@ -58,8 +75,9 @@
                                     <option value="credit_card" {{ old('midtrans_code') == 'credit_card' ? 'selected' : '' }}>Credit Card</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <select name="midtrans_bank" class="form-control">
+                            <div class="col-md-6 m-0">
+                                <label class="label">Bank</label>
+                                <select name="midtrans_bank" class="form-control input">
                                     <option value="">-- Bank (optional) --</option>
                                     <option value="bca" {{ old('midtrans_bank') == 'bca' ? 'selected' : '' }}>BCA</option>
                                     <option value="bni" {{ old('midtrans_bank') == 'bni' ? 'selected' : '' }}>BNI</option>
@@ -68,17 +86,21 @@
                                     <option value="permata" {{ old('midtrans_bank') == 'permata' ? 'selected' : '' }}>Permata</option>
                                 </select>
                             </div>
-                            <div class="col-md-1">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="is_active" value="1" checked />
-                                    <label class="form-check-label small">Active</label>
+                        </div>
+                            <div class="col-md-4 mt-2">
+                                <label class="label">Logo</label>
+                                <input type="file" name="logo" accept="image/*" class="form-control input" />
+                            </div>
+                            <div class="col-md-1 mt-2">
+                                <div class="form-check p-0">
+                                    <label class="label"><input type="checkbox" name="is_active" value="1" checked> Active</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="mt-2">
-                            <button class="btn btn-primary btn-sm">Create</button>
-                        </div>
                     </form>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button class="btn-submit">Create</button>
+                    </div>
                 </div>
             </div>
 

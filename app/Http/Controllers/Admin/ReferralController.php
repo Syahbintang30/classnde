@@ -49,6 +49,16 @@ class ReferralController extends Controller
         return view('admin.referral.leaderboard', compact('rows','users'));
     }
 
+    // Show users who were referred by a specific user (admin view)
+    public function referredUsers(Request $request, User $referrer)
+    {
+        $users = User::where('referred_by', $referrer->id)
+            ->orderByDesc('id')
+            ->paginate(50);
+
+        return view('admin.referral.users', compact('users','referrer'));
+    }
+
     // Admin view showing each user package and their remaining coaching tickets
     public function userPackages(Request $request)
     {
