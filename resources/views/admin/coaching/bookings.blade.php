@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+    @extends('layouts.admin')
 
 @section('title', 'Coaching Bookings')
 
@@ -9,16 +9,18 @@
     <div class="container-fluid py-4">
         @include('admin.coaching._nav')
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="content-wrapper">
+        <div class="d-flex justify-content-between align-items-center mb-4 header">
             <div>
-                <h3 class="mb-0">Coaching Bookings</h3>
-                <div class="text-muted" style="font-size:13px">Manage and review user bookings, create video rooms, accept or reject requests.</div>
+                <h2>Coaching Bookings</h2>
+                <p style="color:#666; font-size:14px">Manage and review user bookings, create video rooms, accept or reject requests.</p>
             </div>
 
             <div style="min-width:320px;">
                 <form method="GET" class="d-flex gap-2">
                     <input name="q" value="{{ request('q') }}" class="form-control form-control-sm" placeholder="Search user, email, order id..." />
-                    <select name="status" class="form-select form-select-sm">
+
+                    <select name="status" class="form-select form-select-sm text-white" style="background-color: #1a1a1a; border:1px solid #333;">
                         <option value="">All status</option>
                         <option value="pending" {{ request('status')=='pending' ? 'selected' : '' }}>Pending</option>
                         <option value="accepted" {{ request('status')=='accepted' ? 'selected' : '' }}>Accepted</option>
@@ -87,8 +89,10 @@
                                                     $paymentInfo = ['order' => $order];
                                                 }
                                             } else {
-                                                $paymentInfo = ['info' => $b->ticket->source];
+                                                $paymentInfo = ['order' => $order];
                                             }
+                                        } else {
+                                            $paymentInfo = ['info' => $b->ticket->source];
                                         }
                                     @endphp
                                     @if($paymentInfo)
@@ -116,33 +120,51 @@
                                                 <a class="btn btn-sm btn-outline-primary open-session-btn" data-booking-time="{{ $btLocal }}" data-href="{{ $sessionUrl }}" target="_blank" href="#">Open Session</a>
                                             </div>
                                         </div>
+                                    @elseif(isset($paymentInfo['order']))
+                                        {{ $paymentInfo['order'] }}
                                     @else
-                                        <form method="POST" action="{{ url('/admin/coaching/bookings/'.$b->id.'/create-room') }}" style="display:inline">@csrf
-                                            <button class="btn btn-sm btn-outline-secondary">Create Room</button>
-                                        </form>
+                                        {{ $paymentInfo['info'] }}
                                     @endif
-                                </td>
-                                <td class="text-end">
-                                    @if(strtolower($b->status) === 'pending')
-                                        <div class="d-flex justify-content-end align-items-center gap-2">
-                                            <form method="POST" action="{{ url('/admin/coaching/bookings/'.$b->id.'/accept') }}" style="display:inline">@csrf
-                                                <button class="btn btn-sm btn-success" title="Accept" style="padding:4px 8px;">✓</button>
-                                            </form>
-
-                                            <button type="button" class="btn btn-sm btn-danger reject-open-btn" data-action="{{ url('/admin/coaching/bookings/'.$b->id.'/reject') }}" title="Reject" style="padding:4px 8px;">✕</button>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td style="min-width:180px">
+                                @php $sessionUrl = url('/coaching/session/'.$b->id); $btLocal = \Carbon\Carbon::parse($b->booking_time)->format('Y-m-d H:i:s'); @endphp
+                                @if($b->twilio_room_sid)
+                                    <div style="display:flex;flex-direction:column;gap:6px;">
+                                        <div style="font-size:13px">{{ $b->twilio_room_sid }}</div>
+                                        <div>
+                                            <a class="btn btn-sm btn-outline-primary open-session-btn" data-booking-time="{{ $btLocal }}" data-href="{{ $sessionUrl }}" target="_blank" href="#">Open Session</a>
                                         </div>
-                                    @else
-                                        <span class="text-muted">—</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center p-4">No bookings found.</td>
-                            </tr>
-                        @endforelse
-                        </tbody>
-                    </table>
+                                    </div>
+                                @else
+                                    <form method="POST" action="{{ url('/admin/coaching/bookings/'.$b->id.'/create-room') }}" style="display:inline">@csrf
+                                        <button class="btn btn-sm btn-outline-secondary">Create Room</button>
+                                    </form>
+                                @endif
+                            </td>
+                            <td class="text-end">
+                                @if(strtolower($b->status) === 'pending')
+                                    <div class="d-flex justify-content-end align-items-center gap-2">
+                                        <form method="POST" action="{{ url('/admin/coaching/bookings/'.$b->id.'/accept') }}" style="display:inline">@csrf
+                                            <button class="btn btn-sm btn-success" title="Accept" style="padding:4px 8px;">✓</button>
+                                        </form>
+
+                                        <button type="button" class="btn btn-sm btn-danger reject-open-btn" data-action="{{ url('/admin/coaching/bookings/'.$b->id.'/reject') }}" title="Reject" style="padding:4px 8px;">✕</button>
+                                    </div>
+                                @else
+                                    <span class="">—</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr style="pointer-events: none; background: transparent;">
+                            <td colspan="7" class="text-center pt-5">No bookings found.</td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
                 </div>
             </div>
         </div>

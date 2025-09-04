@@ -4,17 +4,19 @@
 <div class="container">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="mb-0">Coaching Slot Capacities — {{ DateTime::createFromFormat('!m', $month)->format('F') }} {{ $year }}</h3>
-                <small class="text-muted">Showing current month</small>
+            <div class="d-flex justify-content-between align-items-center mb-4 header">
+                <div>
+                    <h2 class="mb-0">Coaching Slot Capacities — {{ DateTime::createFromFormat('!m', $month)->format('F') }} {{ $year }}</h2>
+                </div>
+                <small style="color: #666">Showing current month</small>
             </div>
 
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
 
-            <p class="text-muted">Select dates in the calendar, then click "Edit hours" to pick hourly slots (1-hour increments). Each slot will be for 1 person (capacity = 1).</p>
-
+            <p class="m-0" style="color:#666; font-size:14px">Select dates in the calendar, then click "Edit hours" to pick hourly slots (1-hour increments). Each slot will be for 1 person (capacity = 1).</p>
+            <p class="" style="color:#666; font-size:14px">Click a date to pick hours, then click <strong>Add</strong> to queue the schedule in the sidebar.</p>
 
 
             <style>
@@ -40,14 +42,13 @@
 
             <div class="row">
                 <div class="col-lg-8">
-                    <p class="text-muted">Click a date to pick hours, then click <strong>Add</strong> to queue the schedule in the sidebar.</p>
                     <div id="calendar" class="mb-3"></div>
                 </div>
                 <div class="col-lg-4">
-                    <div class="card">
+                    <div class="card custom">
                         <div class="card-body">
-                            <h5 class="card-title">Pending schedules</h5>
-                            <p class="text-muted">Schedules you added (not yet saved)</p>
+                            <h6 class="card-title">Pending schedules</h6>
+                            <p style="font-size: 14px">Schedules you added (not yet saved)</p>
                             <div id="pendingList" style="min-height:120px"></div>
                             <hr>
                             <h6 class="mb-2">Existing schedules (this month)</h6>
@@ -57,7 +58,7 @@
                             <form id="saveForm" method="POST" action="{{ url('/admin/coaching/slot-capacities') }}">
                                 @csrf
                                 <input type="hidden" name="slots_json" id="slots_json">
-                                <div class="d-flex gap-2 mt-3">
+                                <div class="d-flex justify-content-end gap-2 mt-4">
                                     <button id="saveAllBtn" class="btn btn-success btn-sm" type="submit" disabled>Save</button>
                                 </div>
                             </form>
@@ -69,15 +70,15 @@
 
             <!-- modal for editing hours -->
             <div class="modal fade" id="hoursModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content custom">
                         <div class="modal-header">
                             <h5 class="modal-title">Pick hours for <span id="modalDateLabel"></span></h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <p>Choose hours (1-hour steps) for the selected date.</p>
-                            <div class="mb-2"><small class="text-muted">Click hour to toggle. Click <strong>Add</strong> to queue this date + hours to the sidebar.</small></div>
+                            <p class="m-0">Choose hours (1-hour steps) for the selected date.</p>
+                            <div class="mb-3" style="color:#888"><small>Click hour to toggle. Click <strong>Add</strong> to queue this date + hours to the sidebar.</small></div>
                             <div id="hoursGrid" class="d-flex flex-wrap gap-2"></div>
                         </div>
                         <div class="modal-footer">
@@ -176,7 +177,7 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn btn-outline-secondary btn-sm';
-        btn.style.width = '72px';
+        btn.style.width = '70px';
         const label = ('0'+h).slice(-2)+':00';
         btn.textContent = label;
         btn.dataset.hour = label;
@@ -274,7 +275,7 @@
         const list = document.getElementById('pendingList');
         list.innerHTML = '';
         const keys = Object.keys(pendingEntries).sort();
-        if(keys.length===0){ list.innerHTML = '<div class="text-muted">No pending schedules.</div>'; return; }
+        if(keys.length===0){ list.innerHTML = '<div>No pending schedules.</div>'; return; }
         keys.forEach(d=>{
             const div = document.createElement('div');
             div.className = 'mb-2';
@@ -297,7 +298,7 @@
         const container = document.getElementById('existingList');
         container.innerHTML = '';
         const keys = Object.keys(existing).sort();
-        if(keys.length===0){ container.innerHTML = '<div class="text-muted">No saved schedules for this month.</div>'; return; }
+        if(keys.length===0){ container.innerHTML = '<div style="font-size:14px">No saved schedules for this month.</div>'; return; }
         keys.forEach(d=>{
             const div = document.createElement('div');
             div.className = 'mb-2';
