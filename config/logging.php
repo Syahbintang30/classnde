@@ -89,7 +89,8 @@ return [
             'handler_with' => [
                 'host' => env('PAPERTRAIL_URL', null),
                 'port' => env('PAPERTRAIL_PORT', null),
-                'connectionString' => env('PAPERTRAIL_URL') && env('PAPERTRAIL_PORT') ? 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT') : null,
+                // Use explicit null defaults so env() doesn't trigger "not set" warnings
+                'connectionString' => env('PAPERTRAIL_URL', null) && env('PAPERTRAIL_PORT', null) ? 'tls://'.env('PAPERTRAIL_URL', null).':'.env('PAPERTRAIL_PORT', null) : null,
             ],
             'processors' => [PsrLogMessageProcessor::class],
         ],
