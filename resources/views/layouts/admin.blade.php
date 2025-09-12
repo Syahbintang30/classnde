@@ -42,33 +42,60 @@
 
                 <div class="collapse navbar-collapse" id="adminNavbar">
                     <ul class="navbar-nav ms-auto nav-links">
-                        <li class="nav-item"><a class="nav-link {{ request()->is('admin/lessons*') ? 'active' : '' }}" href="{{ route('admin.lessons.index') }}">Lessons</a></li>
-                        <li class="nav-item"><a class="nav-link {{ request()->is('admin/packages*') ? 'active' : '' }}" href="{{ route('admin.packages.index') }}">Packages</a></li>
-                        <li class="nav-item"><a class="nav-link {{ request()->is('admin/transactions*') ? 'active' : '' }}" href="{{ route('admin.transactions.index') }}">Transactions</a></li>
-                        <li class="nav-item"><a class="nav-link {{ request()->is('admin/vouchers*') ? 'active' : '' }}" href="{{ route('admin.vouchers.index') }}">Vouchers</a></li>
-                        <li class="nav-item"><a class="nav-link {{ request()->is('admin/payment-methods*') ? 'active' : '' }}" href="{{ route('admin.payment-methods.index') }}">Payment</a></li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="adminReferralMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">Referral</a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminReferralMenu">
-                                <li><a class="dropdown-item" href="{{ route('admin.referral.settings.form') }}">Settings</a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.referral.leaderboard') }}">Leaderboard</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item"><a class="nav-link {{ request()->is('admin/users*') ? 'active' : '' }}" href="{{ route('admin.users.packages') }}">Users</a></li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="adminCoachingMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">Coaching</a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminCoachingMenu">
-                                <li><a class="dropdown-item {{ request()->is('admin/coaching/bookings*') ? 'active' : '' }}" href="{{ url('/admin/coaching/bookings') }}">Bookings</a></li>
-                                <li><a class="dropdown-item {{ request()->is('admin/coaching/slot-capacities*') ? 'active' : '' }}" href="{{ url('/admin/coaching/slot-capacities') }}">Slot Capacities</a></li>
-                                @php
-                                    $coachingSlug = config('coaching.coaching_package_slug');
+                        @php
+                            $user = auth()->user();
+                            $coachingSlug = config('coaching.coaching_package_slug');
+                            $coachingPkg = null;
+                            try {
+                                if ($coachingSlug) {
                                     $coachingPkg = \App\Models\Package::where('slug', $coachingSlug)->first();
-                                @endphp
-                                @if($coachingPkg)
-                                    <li><a class="dropdown-item" href="{{ route('admin.packages.edit', $coachingPkg->id) }}">Edit Coaching Price</a></li>
-                                @endif
-                            </ul>
-                        </li>
+                                }
+                            } catch (\Throwable $e) {
+                                // ignore
+                            }
+                        @endphp
+
+                        @if($user && $user->is_superadmin)
+                            {{-- Superadmin: show full navbar (existing items) --}}
+                            <li class="nav-item"><a class="nav-link {{ request()->is('admin/lessons*') ? 'active' : '' }}" href="{{ route('admin.lessons.index') }}">Lessons</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->is('admin/packages*') ? 'active' : '' }}" href="{{ route('admin.packages.index') }}">Packages</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->is('admin/transactions*') ? 'active' : '' }}" href="{{ route('admin.transactions.index') }}">Transactions</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->is('admin/vouchers*') ? 'active' : '' }}" href="{{ route('admin.vouchers.index') }}">Vouchers</a></li>
+                            <li class="nav-item"><a class="nav-link {{ request()->is('admin/payment-methods*') ? 'active' : '' }}" href="{{ route('admin.payment-methods.index') }}">Payment</a></li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminReferralMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">Referral</a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminReferralMenu">
+                                    <li><a class="dropdown-item" href="{{ route('admin.referral.settings.form') }}">Settings</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('admin.referral.leaderboard') }}">Leaderboard</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item"><a class="nav-link {{ request()->is('admin/users*') ? 'active' : '' }}" href="{{ route('admin.users.packages') }}">Users</a></li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminCoachingMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">Coaching</a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminCoachingMenu">
+                                    <li><a class="dropdown-item {{ request()->is('admin/coaching/bookings*') ? 'active' : '' }}" href="{{ url('/admin/coaching/bookings') }}">Bookings</a></li>
+                                    <li><a class="dropdown-item {{ request()->is('admin/coaching/slot-capacities*') ? 'active' : '' }}" href="{{ url('/admin/coaching/slot-capacities') }}">Slot Capacities</a></li>
+                                    @if($coachingPkg)
+                                        <li><a class="dropdown-item" href="{{ route('admin.packages.edit', $coachingPkg->id) }}">Edit Coaching Price</a></li>
+                                    @endif
+                                </ul>
+                            </li>
+                        @elseif($user && $user->is_admin)
+                            {{-- Regular admin: limited navbar per requirements --}}
+                            <li class="nav-item"><a class="nav-link {{ request()->is('admin/lessons*') ? 'active' : '' }}" href="{{ route('admin.lessons.index') }}">Lessons</a></li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminCoachingMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">Coaching</a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminCoachingMenu">
+                                    <li><a class="dropdown-item {{ request()->is('admin/coaching/bookings*') ? 'active' : '' }}" href="{{ url('/admin/coaching/bookings') }}">Bookings</a></li>
+                                    <li><a class="dropdown-item {{ request()->is('admin/coaching/slot-capacities*') ? 'active' : '' }}" href="{{ url('/admin/coaching/slot-capacities') }}">Slot Capacities</a></li>
+                                    @if($coachingPkg)
+                                        <li><a class="dropdown-item" href="{{ route('admin.packages.edit', $coachingPkg->id) }}">Edit Coaching Price</a></li>
+                                    @endif
+                                </ul>
+                            </li>
+                            <li class="nav-item"><a class="nav-link {{ request()->is('admin/users*') ? 'active' : '' }}" href="{{ route('admin.users.packages') }}">Users</a></li>
+                        @endif
+
                         @auth
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="adminUserMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ auth()->user()->name }}</a>

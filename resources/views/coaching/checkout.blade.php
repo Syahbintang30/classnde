@@ -60,7 +60,11 @@
 @endsection
 
 @push('scripts')
-<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ $midtrans['client_key'] ?? '' }}"></script>
+@php
+    $midtransHost = config('services.midtrans.is_production') ? 'https://app.midtrans.com' : 'https://app.sandbox.midtrans.com';
+    $midtransClientKey = $midtrans['client_key'] ?? config('services.midtrans.client_key') ?? '';
+@endphp
+<script src="{{ $midtransHost }}/snap/snap.js" data-client-key="{{ $midtransClientKey }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     const payBtn = document.getElementById('payBtn');

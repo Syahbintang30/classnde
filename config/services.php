@@ -15,32 +15,32 @@ return [
     */
 
     'postmark' => [
-        'token' => env('POSTMARK_TOKEN'),
+        'token' => env('POSTMARK_TOKEN', null),
     ],
 
     'resend' => [
-        'key' => env('RESEND_KEY'),
+        'key' => env('RESEND_KEY', null),
     ],
 
     'ses' => [
-        'key' => env('AWS_ACCESS_KEY_ID'),
-        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'key' => env('AWS_ACCESS_KEY_ID', null),
+        'secret' => env('AWS_SECRET_ACCESS_KEY', null),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
     'slack' => [
         'notifications' => [
-            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
-            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+            'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN', null),
+            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL', null),
         ],
     ],
 
     'twilio' => [
-        'account_sid' => env('TWILIO_ACCOUNT_SID'),
-        'auth_token' => env('TWILIO_AUTH_TOKEN'),
-        'api_key_sid' => env('TWILIO_API_KEY_SID'),
-        'api_key_secret' => env('TWILIO_API_KEY_SECRET'),
-        'service_sid' => env('TWILIO_SERVICE_SID'),
+        'account_sid' => env('TWILIO_ACCOUNT_SID', null),
+        'auth_token' => env('TWILIO_AUTH_TOKEN', null),
+        'api_key_sid' => env('TWILIO_API_KEY_SID', null),
+        'api_key_secret' => env('TWILIO_API_KEY_SECRET', null),
+        'service_sid' => env('TWILIO_SERVICE_SID', null),
     ],
 
     'midtrans' => [

@@ -38,7 +38,8 @@ class PaymentController extends Controller
         }
 
         // Verify Midtrans signature_key (sha512 of order_id + transaction_status + gross_amount + server_key)
-        $serverKey = env('MIDTRANS_SERVER_KEY');
+    // Prefer configuration-driven server key so deployments can centralize secrets
+    $serverKey = config('services.midtrans.server_key') ?: env('MIDTRANS_SERVER_KEY');
         $hasServerKey = ! empty($serverKey);
         // Midtrans sends signature_key in JSON body; also accept common headers as fallback
         $providedSignature = $data['signature_key'] ?? $request->header('X-Signature') ?? $request->header('X-Callback-Signature') ?? null;

@@ -89,10 +89,13 @@
                                                     $paymentInfo = ['order' => $order];
                                                 }
                                             } else {
+                                                // non-midtrans source: use the raw source value as the order identifier
+                                                $order = $b->ticket->source;
                                                 $paymentInfo = ['order' => $order];
                                             }
                                         } else {
-                                            $paymentInfo = ['info' => $b->ticket->source];
+                                            // be defensive: ticket may be null
+                                            $paymentInfo = ['info' => $b->ticket->source ?? null];
                                         }
                                     @endphp
                                     @if($paymentInfo)
@@ -111,24 +114,6 @@
                                         -
                                     @endif
                                 </td>
-                                <td style="min-width:180px">
-                                    @php $sessionUrl = url('/coaching/session/'.$b->id); $btLocal = \Carbon\Carbon::parse($b->booking_time)->format('Y-m-d H:i:s'); @endphp
-                                    @if($b->twilio_room_sid)
-                                        <div style="display:flex;flex-direction:column;gap:6px;">
-                                            <div style="font-size:13px">{{ $b->twilio_room_sid }}</div>
-                                            <div>
-                                                <a class="btn btn-sm btn-outline-primary open-session-btn" data-booking-time="{{ $btLocal }}" data-href="{{ $sessionUrl }}" target="_blank" href="#">Open Session</a>
-                                            </div>
-                                        </div>
-                                    @elseif(isset($paymentInfo['order']))
-                                        {{ $paymentInfo['order'] }}
-                                    @else
-                                        {{ $paymentInfo['info'] }}
-                                    @endif
-                                @else
-                                    -
-                                @endif
-                            </td>
                             <td style="min-width:180px">
                                 @php $sessionUrl = url('/coaching/session/'.$b->id); $btLocal = \Carbon\Carbon::parse($b->booking_time)->format('Y-m-d H:i:s'); @endphp
                                 @if($b->twilio_room_sid)

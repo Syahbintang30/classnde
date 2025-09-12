@@ -40,6 +40,17 @@ Set the following in production environment (do not commit to repo):
 - Ensure `TWILIO_AUTH_TOKEN` is set and Twilio signature verification is enabled on `app/Http/Controllers/TwilioWebhookController.php`.
 - Use secure, unique webhook endpoints and verify signatures at server-side (already implemented for Midtrans and Twilio).
 
+Midtrans production notes
+- Ensure the following environment variables are set in production (do not commit to repo):
+  - MIDTRANS_SERVER_KEY=<your_production_server_key>
+  - MIDTRANS_CLIENT_KEY=<your_production_client_key>
+  - MIDTRANS_IS_PRODUCTION=true
+  - MIDTRANS_MERCHANT_ID=<optional_merchant_id>
+- In the Midtrans dashboard set the server-to-server notification URL to:
+  - https://YOUR_DOMAIN/payments/midtrans-notify
+  and enable notifications for transaction events. Use a secret endpoint or firewall rules if possible.
+- Verify webhook signature verification in `app/Http/Controllers/PaymentController.php` — it expects Midtrans signature_key (sha512) and validates it against the server key configured above.
+
 5) Deployment recipe (example)
 - Build frontend assets (on CI or build server):
   - npm ci
@@ -78,6 +89,28 @@ Set the following in production environment (do not commit to repo):
 - Verify webhook deliveries and Midtrans/Twilio signature verification
 - Verify that session/caching are working (no file session creation)
 - Run a small end-to-end purchase in sandbox mode and confirm transaction grant
+
+Testing webhooks locally using ngrok
+-----------------------------------
+1) Install and run ngrok (or an equivalent tunnel) to expose your local app over HTTPS:
+
+  ngrok http 8000
+
+  Note the https forwarding URL, e.g. https://abcd1234.ngrok.io
+
+2) Point Midtrans sandbox notifications to your public webhook URL:
+
+  https://abcd1234.ngrok.io/payments/midtrans-notify
+
+  In the Midtrans dashboard (sandbox), set the Notification URL to the above and enable notifications.
+
+3) Use the included artisan helper to simulate a signed Midtrans webhook payload and send it to your app:
+
+  php artisan midtrans:test-webhook --url="https://abcd1234.ngrok.io/payments/midtrans-notify" --order="test-order-123" --status=settlement --amount=1000
+
+  The command will compute the expected `signature_key` (sha512) using `MIDTRANS_SERVER_KEY` from your configuration and POST a payload to the target URL.
+
+4) Alternatively, trigger a sandbox payment via the UI (or create a snap token) and wait for Midtrans to send the notification to your ngrok URL. Monitor your application logs to verify handling.
 
 Notes & resources
 - Secrets are the highest priority. Rotate keys immediately if they were present in the local `.env` file.
