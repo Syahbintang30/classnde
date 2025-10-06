@@ -51,7 +51,10 @@ class TwilioService
 	{
 		// In testing environment, avoid calling external Twilio API
 		if (app()->environment('testing')) {
-			return (object) ['sid' => 'RMFAKE' . rand(1000,9999), 'uniqueName' => $roomName];
+			$config = config('constants.twilio');
+			$min = $config['fake_room_id_min'];
+			$max = $config['fake_room_id_max'];
+			return (object) ['sid' => 'RMFAKE' . rand($min, $max), 'uniqueName' => $roomName];
 		}
 		$client = $this->getClient();
 		if (! $client) {
@@ -93,8 +96,9 @@ class TwilioService
 	 * Create an Access Token (JWT) for the given identity and room.
 	 * Returns the token string.
 	 */
-	public function createAccessToken(string $identity, string $roomName, int $ttl = 3600): string
+	public function createAccessToken(string $identity, string $roomName, int $ttl = null): string
 	{
+		$ttl = $ttl ?? config('constants.twilio.token_ttl_seconds');
 		if (! $this->accountSid || ! $this->apiKeySid || ! $this->apiKeySecret) {
 			throw new \RuntimeException('Twilio credentials not configured');
 		}

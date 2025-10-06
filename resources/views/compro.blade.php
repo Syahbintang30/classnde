@@ -2,6 +2,18 @@
 
 @section('title', 'Nde Official')
 
+@push('styles')
+<style>
+    /* Full-bleed layout for /ndeofficial */
+    .wrapper, .header { max-width: none !important; margin: 0 !important; width: 100% !important; }
+    /* Make hero background truly edge-to-edge */
+    .hero .slides, .hero .slides li { width: 100%; }
+    .hero .slides li { height: 80vh !important; min-height: 60vh; }
+    @media (min-width: 992px){ .hero .slides li { height: 100vh !important; } }
+    .background-img { left: 0; right: 0; width: 100%; }
+</style>
+@endpush
+
 @section('content')
 
     <!-- Preloader -->

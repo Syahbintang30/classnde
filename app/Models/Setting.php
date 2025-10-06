@@ -23,4 +23,22 @@ class Setting extends Model
         $s = static::updateOrCreate(['key' => $key], ['value' => $value]);
         return $s;
     }
+
+    /**
+     * Get intermediate package ID from settings with fallback
+     */
+    public static function getIntermediatePackageId()
+    {
+        return (int) static::get('intermediate_package_id', 2);
+    }
+
+    /**
+     * Get allowed intermediate package slugs from settings
+     */
+    public static function getIntermediatePackageSlugs()
+    {
+        $defaultSlug = config('constants.business_logic.intermediate_package_slug');
+        $slugs = static::get('intermediate_package_slugs', "{$defaultSlug},upgrade-{$defaultSlug}");
+        return array_map('trim', explode(',', $slugs));
+    }
 }

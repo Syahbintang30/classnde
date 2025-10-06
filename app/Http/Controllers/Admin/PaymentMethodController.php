@@ -7,8 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\PaymentMethod;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\MessageBag;
 use App\Services\OrderIdGenerator;
+use App\Services\SecureFileUploadService;
 
 class PaymentMethodController extends Controller
 {
@@ -44,12 +46,44 @@ class PaymentMethodController extends Controller
             $method->is_active = isset($attrs['is_active']) ? boolval($attrs['is_active']) : false;
             $method->midtrans_code = $attrs['midtrans_code'] ?? $method->midtrans_code;
             $method->midtrans_bank = $attrs['midtrans_bank'] ?? $method->midtrans_bank;
-            // handle per-method logo upload
+            // handle per-method logo upload with security validation
             if ($request->hasFile("methods.{$id}.logo")) {
                 $file = $request->file("methods.{$id}.logo");
+                
                 if ($file->isValid()) {
-                    $path = $file->store('payment_logos', 'public');
-                    $method->logo_url = 'storage/' . $path;
+                    $secureUploadService = new SecureFileUploadService();
+                    $validation = $secureUploadService->validateUploadedFile($file, 'image');
+                    
+                    if ($validation['valid']) {
+                        $uploadResult = $secureUploadService->storeSecurely($file, 'payment_logos', 'image', 'public');
+                        
+                        if ($uploadResult['success']) {
+                            // Delete old logo if exists
+                            if ($method->logo_url && strpos($method->logo_url, 'storage/') === 0) {
+                                $oldPath = str_replace('storage/', '', $method->logo_url);
+                                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+                            }
+                            
+                            $method->logo_url = 'storage/' . $uploadResult['path'];
+                            
+                            Log::info('Payment method logo updated', [
+                                'method_id' => $method->id,
+                                'original_filename' => $file->getClientOriginalName(),
+                                'stored_path' => $uploadResult['path']
+                            ]);
+                        } else {
+                            Log::error('Payment method logo upload failed', [
+                                'method_id' => $method->id,
+                                'errors' => $uploadResult['errors']
+                            ]);
+                        }
+                    } else {
+                        Log::warning('Payment method logo validation failed', [
+                            'method_id' => $method->id,
+                            'filename' => $file->getClientOriginalName(),
+                            'errors' => $validation['errors']
+                        ]);
+                    }
                 }
             }
             $method->save();
@@ -80,12 +114,41 @@ class PaymentMethodController extends Controller
 
         $attrs['is_active'] = isset($attrs['is_active']) ? boolval($attrs['is_active']) : false;
 
-        // handle logo upload
+        // handle logo upload with security validation
         if ($request->hasFile('logo')) {
             $file = $request->file('logo');
+            
             if ($file->isValid()) {
-                $path = $file->store('payment_logos', 'public');
-                $attrs['logo_url'] = 'storage/' . $path;
+                $secureUploadService = new SecureFileUploadService();
+                $validation = $secureUploadService->validateUploadedFile($file, 'image');
+                
+                if (!$validation['valid']) {
+                    Log::warning('Payment method logo creation failed validation', [
+                        'filename' => $file->getClientOriginalName(),
+                        'errors' => $validation['errors']
+                    ]);
+                    
+                    return back()->withErrors(['logo' => 'Invalid logo file: ' . implode(', ', $validation['errors'])]);
+                }
+                
+                $uploadResult = $secureUploadService->storeSecurely($file, 'payment_logos', 'image', 'public');
+                
+                if (!$uploadResult['success']) {
+                    Log::error('Payment method logo storage failed', [
+                        'filename' => $file->getClientOriginalName(),
+                        'errors' => $uploadResult['errors']
+                    ]);
+                    
+                    return back()->withErrors(['logo' => 'Logo storage failed: ' . implode(', ', $uploadResult['errors'])]);
+                }
+                
+                $attrs['logo_url'] = 'storage/' . $uploadResult['path'];
+                
+                Log::info('Payment method logo created successfully', [
+                    'original_filename' => $file->getClientOriginalName(),
+                    'stored_path' => $uploadResult['path'],
+                    'file_size' => $uploadResult['size']
+                ]);
             }
         }
 
@@ -123,9 +186,15 @@ class PaymentMethodController extends Controller
 
     /**
      * Test creating a Midtrans snap token for a given payment method (admin-only helper).
+     * Only available in non-production environments.
      */
     public function test($id)
     {
+        // Block test endpoint in production
+        if (app()->environment('production')) {
+            return response()->json(['error' => 'Test endpoint not available in production'], 403);
+        }
+
         $method = PaymentMethod::find($id);
         if (! $method) return response()->json(['error' => 'Method not found'], 404);
 
@@ -133,12 +202,12 @@ class PaymentMethodController extends Controller
         $serverKey = config('services.midtrans.server_key');
         if (! $serverKey) return response()->json(['error' => 'Midtrans server key not configured'], 500);
 
-    $orderId = OrderIdGenerator::generate('nde');
-        $gross = 1000; // small test amount
+        $orderId = OrderIdGenerator::generate('test');
+        $testAmount = \App\Services\DynamicConfigService::get('test_payment_amount', 1000);
 
         $payload = [
-            'transaction_details' => [ 'order_id' => $orderId, 'gross_amount' => $gross ],
-            'item_details' => [[ 'id' => 'test', 'price' => $gross, 'quantity' => 1, 'name' => 'Test' ]]
+            'transaction_details' => [ 'order_id' => $orderId, 'gross_amount' => $testAmount ],
+            'item_details' => [[ 'id' => 'test_item', 'price' => $testAmount, 'quantity' => 1, 'name' => 'Test Payment' ]]
         ];
 
         // map method midtrans_code
@@ -151,7 +220,11 @@ class PaymentMethodController extends Controller
             elseif ($code === 'bank_transfer') $payload['enabled_payments'] = ['bank_transfer'];
         }
 
-        $midtransUrl = config('services.midtrans.is_production') ? 'https://app.midtrans.com/snap/v1/transactions' : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
+        $midtransBase = config('constants.api_endpoints.midtrans_base');
+        $midtransSandbox = config('constants.api_endpoints.midtrans_sandbox');
+        $midtransUrl = config('services.midtrans.is_production') 
+            ? "{$midtransBase}/snap/v1/transactions" 
+            : "{$midtransSandbox}/snap/v1/transactions";
         $auth = base64_encode($serverKey . ':');
 
     $res = Http::withHeaders([

@@ -19,7 +19,12 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <link rel="icon" type="image/png" href="{{ asset('compro/img/ndelogo.png') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    {{-- Prefer local Font Awesome if present, otherwise fallback to CDN --}}
+    @if(file_exists(public_path('vendor/fontawesome/css/all.min.css')))
+        <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}">
+    @else
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+    @endif
     <!-- Google font fallback and local font override -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="{{ asset('css/google-fonts.css') }}" rel="stylesheet" type="text/css" media="all" />
@@ -33,8 +38,14 @@
 </head>
 
 <body>
-    {{-- hide the global app navbar on the company profile page (route name: compro), on coaching session pages, and on song tutorial viewer --}}
-    @if(Route::currentRouteName() !== 'compro' && ! request()->routeIs('coaching.session') && ! request()->routeIs('song.tutorial.show'))
+    {{-- hide the global app navbar on the company profile page (route name: compro), on coaching session pages, on song tutorial viewer, and on admin audit pages --}}
+    @if(
+        Route::currentRouteName() !== 'compro'
+        && ! request()->routeIs('coaching.session')
+        && ! request()->routeIs('song.tutorial.show')
+        && ! request()->routeIs('admin.audit.*')
+        && ! request()->is('admin/audit*')
+    )
         <!-- Top navigation (modern glass) -->
         <nav class="global-nav" aria-label="Main navigation">
             <style>
@@ -108,21 +119,8 @@
                             $showSongTutorial = false;
                             if (auth()->check()) {
                                 $u = auth()->user();
-                                // Treat package_id == 2 as the "intermediate" package
-                                if ($u && $u->package_id && $u->package_id == 2) {
-                                    $showSongTutorial = true;
-                                }
-                                // Also allow users who have an intermediate or upgrade-intermediate package slug
-                                try {
-                                    if (! $showSongTutorial) {
-                                        $pkg = \App\Models\Package::find($u->package_id);
-                                        if ($pkg && in_array($pkg->slug, ['intermediate','upgrade-intermediate'])) {
-                                            $showSongTutorial = true;
-                                        }
-                                    }
-                                } catch (\Throwable $e) {
-                                    // ignore lookup failures in the nav
-                                }
+                                // Use configurable method instead of hardcoded package_id == 2
+                                $showSongTutorial = $u->hasIntermediateAccess();
                             }
                         @endphp
 
@@ -200,7 +198,17 @@
     {{-- Admin sub-navbar (visible to authenticated admin users) --}}
     @auth
         @php $isAdminVisible = (auth()->user()->is_admin || auth()->user()->is_superadmin); @endphp
-        @if($isAdminVisible && ! request()->routeIs('coaching.*') && ! request()->is('coaching*') && ! request()->routeIs('registerclass') && ! request()->is('registerclass*') && ! request()->routeIs('admin.coaching.*') && ! request()->is('admin/coaching*') && ! request()->routeIs('compro') && ! request()->is('compro*'))
+        @if(
+            $isAdminVisible
+            && ! request()->routeIs('coaching.*')
+            && ! request()->is('coaching*')
+            && ! request()->routeIs('registerclass')
+            && ! request()->is('registerclass*')
+            && ! request()->routeIs('admin.coaching.*')
+            && ! request()->is('admin/coaching*')
+            && ! request()->routeIs('compro')
+            && ! request()->is('compro*')
+        )
             <!-- hide this admin sub-navbar on coaching pages -->
             <nav style="background:#0b1220;color:#fff;padding:8px 20px;border-bottom:1px solid #0f1724;">
                 <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:18px;">

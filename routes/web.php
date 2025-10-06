@@ -17,7 +17,7 @@ Route::get('/', function () {
     return redirect(route('registerclass'));
 });
 
-Route::get('/registerclass', [KelasController::class, 'index'])->name('registerclass');
+Route::get('/registerclass', [KelasController::class, 'index'])->middleware('rate.limit:default')->name('registerclass');
 Route::get('/dashboard', function () { return redirect(route('registerclass')); })->name('dashboard');
 Route::get('/kelas', function () { return redirect(route('registerclass')); })->name('kelas');
 Route::get('/registerclass/{lesson}', [KelasController::class, 'show'])->name('kelas.show');
@@ -28,16 +28,16 @@ Route::get('/song-tutorial', [App\Http\Controllers\SongTutorialController::class
 Route::get('/song-tutorial/{lesson}', [App\Http\Controllers\SongTutorialController::class, 'show'])->name('song.tutorial.show');
 Route::get('/song-tutorial/{lesson}/content', [App\Http\Controllers\SongTutorialController::class, 'content'])->name('song.tutorial.content');
 
-Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\EnsureAdminOrSuper::class)->group(function () {
+Route::prefix('admin')->name('admin.')->middleware([\App\Http\Middleware\EnsureAdminOrSuper::class, 'audit.log'])->group(function () {
     Route::get('/', function(){
         return redirect(route('admin.lessons.index'));
     })->name('dashboard');
     Route::resource('lessons', LessonController::class);
     Route::get('packages', [PackageController::class, 'index'])->name('packages.index');
     Route::get('packages/create', [PackageController::class, 'create'])->name('packages.create');
-    Route::post('packages', [PackageController::class, 'store'])->name('packages.store');
+    Route::post('packages', [PackageController::class, 'store'])->middleware('file.upload.security')->name('packages.store');
     Route::get('packages/{package}/edit', [PackageController::class, 'edit'])->name('packages.edit');
-    Route::put('packages/{package}', [PackageController::class, 'update'])->name('packages.update');
+    Route::put('packages/{package}', [PackageController::class, 'update'])->middleware('file.upload.security')->name('packages.update');
     Route::delete('packages/{package}', [PackageController::class, 'destroy'])->name('packages.destroy');
     Route::post('bunny/upload-url', function (\Illuminate\Http\Request $request) {
         return response()->json([
@@ -46,7 +46,7 @@ Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\EnsureAd
             'upload_url' => null,
         ], 501);
     })->name('bunny.upload-url');
-    Route::post('bunny/upload-server', [App\Http\Controllers\BunnyController::class, 'uploadToBunny'])->name('bunny.upload-server');
+    Route::post('bunny/upload-server', [App\Http\Controllers\BunnyController::class, 'uploadToBunny'])->middleware('file.upload.security')->name('bunny.upload-server');
     Route::get('bunny/video-status/{guid}', [App\Http\Controllers\BunnyController::class, 'videoStatus'])->name('bunny.video-status');
     Route::get('lessons/{lesson}/topics/create', [TopicController::class, 'create'])->name('topics.create');
     Route::post('lessons/{lesson}/topics', [TopicController::class, 'store'])->name('topics.store');
@@ -54,8 +54,8 @@ Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\EnsureAd
     Route::put('lessons/{lesson}/topics/{topic}', [TopicController::class, 'update'])->name('topics.update');
     Route::delete('lessons/{lesson}/topics/{topic}', [TopicController::class, 'destroy'])->name('topics.destroy');
     Route::get('payment-methods', [App\Http\Controllers\Admin\PaymentMethodController::class, 'index'])->name('payment-methods.index');
-    Route::post('payment-methods/update', [App\Http\Controllers\Admin\PaymentMethodController::class, 'update'])->name('payment-methods.update');
-    Route::post('payment-methods', [App\Http\Controllers\Admin\PaymentMethodController::class, 'store'])->name('payment-methods.store');
+    Route::post('payment-methods/update', [App\Http\Controllers\Admin\PaymentMethodController::class, 'update'])->middleware('file.upload.security')->name('payment-methods.update');
+    Route::post('payment-methods', [App\Http\Controllers\Admin\PaymentMethodController::class, 'store'])->middleware('file.upload.security')->name('payment-methods.store');
     Route::delete('payment-methods/{id}', [App\Http\Controllers\Admin\PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
     Route::post('payment-methods/{id}/test', [App\Http\Controllers\Admin\PaymentMethodController::class, 'test'])->name('payment-methods.test');
     Route::get('transactions', [App\Http\Controllers\Admin\TransactionController::class, 'index'])->name('transactions.index');
@@ -82,6 +82,9 @@ Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\EnsureAd
     Route::get('vouchers/{voucher}/edit', [\App\Http\Controllers\Admin\VoucherController::class, 'edit'])->name('vouchers.edit');
     Route::put('vouchers/{voucher}', [\App\Http\Controllers\Admin\VoucherController::class, 'update'])->name('vouchers.update');
     Route::delete('vouchers/{voucher}', [\App\Http\Controllers\Admin\VoucherController::class, 'destroy'])->name('vouchers.destroy');
+    
+    // Audit trail (Superadmin)
+    Route::get('audit', [\App\Http\Controllers\Admin\AuditTrailController::class, 'index'])->middleware(\App\Http\Middleware\EnsureSuperAdmin::class)->name('audit.index');
     Route::get('settings/promo', function () {
         return redirect(route('videopromo'));
     })->name('admin.settings.promo');
@@ -90,6 +93,11 @@ Route::prefix('admin')->name('admin.')->middleware(\App\Http\Middleware\EnsureAd
     Route::post('users/{user}', [\App\Http\Controllers\Admin\ReferralController::class, 'updateUser'])->name('users.update');
     Route::get('videopromo', [\App\Http\Controllers\Admin\VideoPromoController::class, 'edit'])->middleware(\App\Http\Middleware\EnsureSuperAdmin::class)->name('videopromo');
     Route::post('videopromo', [\App\Http\Controllers\Admin\VideoPromoController::class, 'update'])->middleware(\App\Http\Middleware\EnsureSuperAdmin::class)->name('videopromo.update');
+    
+    // System Settings (Superadmin only to prevent security issues)
+    Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])->middleware(\App\Http\Middleware\EnsureSuperAdmin::class)->name('settings.index');
+    Route::post('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])->middleware(\App\Http\Middleware\EnsureSuperAdmin::class)->name('settings.update');
+    Route::post('settings/reset', [\App\Http\Controllers\Admin\SettingsController::class, 'reset'])->middleware(\App\Http\Middleware\EnsureSuperAdmin::class)->name('settings.reset');
 });
 
 use App\Http\Controllers\BunnyController;
@@ -157,23 +165,29 @@ Route::middleware('auth')->group(function(){
 
 Route::get('/registerclass/{lesson}/buy', [App\Http\Controllers\KelasController::class, 'buy'])->name('kelas.buy');
 
-Route::post('/registerclass/{lesson}/payment/complete', [App\Http\Controllers\KelasController::class, 'paymentComplete'])->name('kelas.payment.complete');
+Route::post('/registerclass/{lesson}/payment/complete', [App\Http\Controllers\KelasController::class, 'paymentComplete'])->middleware('rate.limit:payment')->name('kelas.payment.complete');
 
 Route::middleware('auth')->group(function(){
     Route::get('/registerclass/{lesson}/payment', [App\Http\Controllers\KelasController::class, 'payment'])->name('kelas.payment');
 });
 
-Route::post('/api/midtrans/create', [App\Http\Controllers\MidtransController::class, 'createSnapToken']);
+// Allow guests to create Midtrans Snap tokens (guest checkout). Protect with CSRF (web middleware) and rate limit.
+Route::post('/api/midtrans/create', [App\Http\Controllers\MidtransController::class, 'createSnapToken'])
+    ->middleware('throttle:30,1');
 
-Route::post('/payments/midtrans-notify', [App\Http\Controllers\PaymentController::class, 'midtransNotification'])->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+Route::post('/payments/midtrans-notify', [App\Http\Controllers\PaymentController::class, 'midtransNotification'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]) // Webhook needs CSRF disabled
+    ->middleware('webhook.security:midtrans'); // Apply webhook security middleware
 
-Route::get('/api/transactions/status', [App\Http\Controllers\PaymentController::class, 'transactionStatus']);
+Route::get('/api/transactions/status', [App\Http\Controllers\PaymentController::class, 'transactionStatus'])
+    ->middleware('auth'); // Protect transaction status check
 
 Route::get('/payments/thankyou', [App\Http\Controllers\PaymentRedirectController::class, 'thankyou'])->name('payments.thankyou');
 Route::get('/payments/error', [App\Http\Controllers\PaymentRedirectController::class, 'error'])->name('payments.error');
 Route::get('/payments/status', [App\Http\Controllers\PaymentRedirectController::class, 'status'])->name('payments.status');
 
-Route::post('/webhooks/twilio/video', [App\Http\Controllers\TwilioWebhookController::class, 'video']);
+Route::post('/webhooks/twilio/video', [App\Http\Controllers\TwilioWebhookController::class, 'video'])
+    ->middleware('webhook.security:twilio'); // Apply webhook security middleware
 
 require __DIR__ . '/auth.php';
 
@@ -201,7 +215,7 @@ Route::post('/vouchers/validate', function (\Illuminate\Http\Request $request) {
 Route::middleware('auth')->group(function(){
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile', [ProfileController::class, 'update'])->middleware('file.upload.security')->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile/referrals', [ProfileController::class, 'referrals'])->name('profile.referrals');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('password.update');

@@ -11,7 +11,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Register security middlewares
+        $middleware->alias([
+            'webhook.security' => \App\Http\Middleware\WebhookSecurityMiddleware::class,
+            'file.upload.security' => \App\Http\Middleware\FileUploadSecurityMiddleware::class,
+            'rate.limit' => \App\Http\Middleware\RateLimitingMiddleware::class,
+            'session.security' => \App\Http\Middleware\SessionSecurityMiddleware::class,
+            'audit.log' => \App\Http\Middleware\AuditLogMiddleware::class,
+        ]);
+        
+        // Apply security middlewares to all web routes
+        $middleware->web(append: [
+            \App\Http\Middleware\ContentSecurityPolicyMiddleware::class,
+            \App\Http\Middleware\SessionSecurityMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

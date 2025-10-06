@@ -15,42 +15,32 @@ class CoachingBookingController extends Controller
     {
         // Simple admin listing: latest first, paginate 50
         // Order so upcoming sessions (>= now) appear first, then past ones; within each group order by booking_time ascending
-        $nowStr = \Carbon\Carbon::now()->format('Y-m-d H:i:s');
+        $now = \Carbon\Carbon::now();
         $bookings = CoachingBooking::with(['user','coach','ticket'])
-            ->orderByRaw("(CASE WHEN booking_time >= ? THEN 0 ELSE 1 END), booking_time ASC", [$nowStr])
+            ->orderBy('booking_time', 'ASC')
             ->paginate(50);
 
         // Compute aggregated "Taken" counts per slot for the dates shown on this page to avoid N+1 queries.
-        // Build date/time expressions per DB driver
-        $driver = DB::connection()->getDriverName();
-        if ($driver === 'sqlite') {
-            $dayExpr = "date(booking_time)";
-            $hmExpr = "strftime('%H:%M', booking_time)";
-        } elseif ($driver === 'mysql') {
-            $dayExpr = "DATE(booking_time)";
-            $hmExpr = "DATE_FORMAT(booking_time, '%H:%i')";
-        } elseif ($driver === 'pgsql') {
-            $dayExpr = "booking_time::date";
-            $hmExpr = "to_char(booking_time, 'HH24:MI')";
-        } else {
-            // fallback to sqlite-style expressions
-            $dayExpr = "date(booking_time)";
-            $hmExpr = "strftime('%H:%M', booking_time)";
-        }
-
-        // Collect distinct dates present in current page bookings
+        // Use safe database-agnostic approach instead of raw SQL expressions
         $dates = $bookings->getCollection()->pluck('booking_time')
             ->map(fn($t) => Carbon::parse($t)->toDateString())
             ->unique()->values()->all();
 
         $slotCounts = [];
         if (!empty($dates)) {
-            $rows = CoachingBooking::selectRaw("{$dayExpr} as day, {$hmExpr} as hm, count(*) as cnt")
-                ->whereIn(DB::raw($dayExpr), $dates)
-                ->groupBy('day','hm')
-                ->get();
-            foreach ($rows as $r) {
-                $slotCounts[$r->day . ' ' . $r->hm] = (int) $r->cnt;
+            // Use safer approach with whereDate for each date
+            $bookingsQuery = CoachingBooking::query();
+            foreach ($dates as $date) {
+                $bookingsQuery->orWhereDate('booking_time', $date);
+            }
+            $bookingsForCounts = $bookingsQuery->get();
+            
+            foreach ($bookingsForCounts as $booking) {
+                $carbon = Carbon::parse($booking->booking_time);
+                $day = $carbon->toDateString();
+                $time = $carbon->format('H:i');
+                $key = $day . ' ' . $time;
+                $slotCounts[$key] = ($slotCounts[$key] ?? 0) + 1;
             }
         }
 

@@ -18,7 +18,9 @@ class AdminFeedbackController extends Controller
     public function update(Request $request, \App\Models\CoachingBooking $booking)
     {
         $this->authorize('admin');
-        $data = $request->validate(['admin_action' => 'nullable|string|max:1000']);
+        $adminActionMaxLength = config('constants.business_logic.admin_action_max_length');
+        
+        $data = $request->validate(['admin_action' => "nullable|string|max:{$adminActionMaxLength}"]);
         // store admin action into booking.admin_note (if column exists) else append to notes
         try {
             if (isset($booking->admin_note)) {

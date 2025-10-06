@@ -9,7 +9,7 @@
     <div class="steps" role="tablist" aria-label="Booking steps" style="display:flex;align-items:center;gap:12px;max-width:720px;width:100%;justify-content:center;">
         <div class="step active" aria-current="step" title="Info"><i class="fa fa-info" aria-hidden="true"></i><span class="sr-only">Info</span></div>
         <div class="line" aria-hidden="true"></div>
-        <div class="step" title="Payment"><i class="fa fa-credit-card" aria-hidden="true"></i><span class="sr-only">Payment</span></div>
+    <div class="step" title="Payment"><i class="fa-solid fa-credit-card" aria-hidden="true"></i><span class="sr-only">Payment</span></div>
         <div class="line" aria-hidden="true"></div>
         <div class="step" title="Done"><i class="fa fa-check" aria-hidden="true"></i><span class="sr-only">Done</span></div>
     </div>

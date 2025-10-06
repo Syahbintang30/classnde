@@ -8,14 +8,15 @@ class VerifyCsrfToken extends Middleware
 {
 	/**
 	 * The URIs that should be excluded from CSRF verification.
+	 * SECURITY NOTE: These endpoints MUST have alternative security measures!
 	 *
 	 * @var array
 	 */
 	protected $except = [
-		// Midtrans server-to-server notification
+		// Midtrans server-to-server notification (protected by signature validation & IP whitelist)
 		'payments/midtrans-notify',
-		// Generic webhook endpoints
-		'webhooks/*',
+		// Twilio webhooks (protected by signature validation & IP whitelist)  
+		'webhooks/twilio/*',
 	];
 }
 

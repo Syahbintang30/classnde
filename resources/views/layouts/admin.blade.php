@@ -80,6 +80,7 @@
                                     @endif
                                 </ul>
                             </li>
+                            <li class="nav-item"><a class="nav-link {{ request()->is('admin/settings*') ? 'active' : '' }}" href="{{ route('admin.settings.index') }}">Settings</a></li>
                         @elseif($user && $user->is_admin)
                             {{-- Regular admin: limited navbar per requirements --}}
                             <li class="nav-item"><a class="nav-link {{ request()->is('admin/lessons*') ? 'active' : '' }}" href="{{ route('admin.lessons.index') }}">Lessons</a></li>

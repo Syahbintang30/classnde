@@ -6,7 +6,7 @@
         <div class="steps" style="justify-content:center;margin-bottom:18px">
             <div class="step"><i class="fa fa-info"></i></div>
             <div class="line"></div>
-            <div class="step active"><i class="fa fa-credit-card"></i></div>
+            <div class="step active"><i class="fa-solid fa-credit-card" aria-hidden="true"></i></div>
             <div class="line"></div>
             <div class="step"><i class="fa fa-check"></i></div>
         </div>

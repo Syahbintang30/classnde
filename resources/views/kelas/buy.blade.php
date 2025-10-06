@@ -57,7 +57,7 @@
     <div class="steps" role="tablist" aria-label="Booking steps" style="display:flex;align-items:center;gap:12px;max-width:720px;width:100%;justify-content:center;">
         <div class="step active" aria-current="step" title="Info"><i class="fa fa-info" aria-hidden="true"></i><span class="sr-only">Info</span></div>
         <div class="line" aria-hidden="true"></div>
-        <div class="step" title="Payment"><i class="fa fa-credit-card" aria-hidden="true"></i><span class="sr-only">Payment</span></div>
+    <div class="step" title="Payment"><i class="fa-solid fa-credit-card" aria-hidden="true"></i><span class="sr-only">Payment</span></div>
         <div class="line" aria-hidden="true"></div>
         <div class="step" title="Done"><i class="fa fa-check" aria-hidden="true"></i><span class="sr-only">Done</span></div>
     </div>
@@ -190,8 +190,11 @@
                     <div class="password-field" style="position:relative;">
                         <input id="register-password" name="password" type="password" required style="width:100%;padding:14px 44px 14px 14px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
                         @error('password') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
-                        <button type="button" id="toggle-password" aria-label="Show password" title="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;cursor:pointer;padding:6px;border-radius:6px;">
-                            <i class="fa fa-eye" aria-hidden="true"></i>
+                        <button type="button" id="toggle-password" aria-label="Show password" title="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -201,8 +204,11 @@
                     <div class="password-field" style="position:relative;">
                         <input id="register-password-confirm" name="password_confirmation" type="password" required style="width:100%;padding:14px 44px 14px 14px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
                         @error('password_confirmation') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
-                        <button type="button" id="toggle-password-confirm" aria-label="Show password" title="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;cursor:pointer;padding:6px;border-radius:6px;">
-                            <i class="fa fa-eye" aria-hidden="true"></i>
+                        <button type="button" id="toggle-password-confirm" aria-label="Show password" title="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
                         </button>
                     </div>
                     <div id="confirm_password_error" style="display:none;color:#ffb3b3;margin-top:6px;font-size:13px"></div>
@@ -368,17 +374,22 @@ document.addEventListener('DOMContentLoaded', function(){
     const pwdConfirm = document.getElementById('register-password-confirm');
     function wireToggle(btn, input){
         if(!btn || !input) return;
+        
+        // SVG icons
+        var eye = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        var eyeOff = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.7 21.7 0 0 1 5-5"></path><path d="M1 1l22 22"></path></svg>';
+        
         btn.addEventListener('click', function(){
             if(input.type === 'password'){
                 input.type = 'text';
                 btn.setAttribute('aria-label','Hide password');
                 btn.title = 'Hide password';
-                btn.innerHTML = '<i class="fa fa-eye-slash" aria-hidden="true"></i>';
+                btn.innerHTML = eyeOff;
             } else {
                 input.type = 'password';
                 btn.setAttribute('aria-label','Show password');
                 btn.title = 'Show password';
-                btn.innerHTML = '<i class="fa fa-eye" aria-hidden="true"></i>';
+                btn.innerHTML = eye;
             }
         });
     }

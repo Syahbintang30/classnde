@@ -38,10 +38,12 @@ class CoachingController extends Controller
     {
         $user = Auth::user();
         if (! $user) return redirect()->route('login');
+        $keluhKesahMaxLength = config('constants.business_logic.keluh_kesah_max_length');
+        
         $data = $request->validate([
             'booking_time' => 'required|string',
             'notes' => 'nullable|string|max:255',
-            'keluh_kesah' => 'nullable|string|max:1000',
+            'keluh_kesah' => "nullable|string|max:{$keluhKesahMaxLength}",
             'want_to_learn' => 'nullable|string|max:255',
         ]);
 

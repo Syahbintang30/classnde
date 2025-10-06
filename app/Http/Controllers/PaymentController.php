@@ -12,6 +12,63 @@ use App\Models\User;
 
 class PaymentController extends Controller
 {
+    /**
+     * SECURITY: Validate Midtrans webhook IP ranges
+     * Midtrans official IP ranges for webhooks
+     */
+    private function validateMidtransIP(Request $request)
+    {
+        // Skip IP validation in local development
+        if (app()->environment('local') || config('app.debug')) {
+            return true;
+        }
+        
+        $clientIP = $request->ip();
+        
+        // Midtrans official IP ranges (as of 2024)
+        // Reference: https://docs.midtrans.com/en/other/faq/technical#what-ips-does-midtrans-use-to-send-webhooks
+        $midtransIPs = [
+            '103.208.23.0/24',
+            '103.208.23.6',
+            '103.208.23.102', 
+            '103.127.16.0/23',
+            '103.127.17.6',
+            '209.58.183.0/24'
+        ];
+        
+        foreach ($midtransIPs as $range) {
+            if ($this->ipInRange($clientIP, $range)) {
+                return true;
+            }
+        }
+        
+        Log::warning('Midtrans webhook: unauthorized IP attempt', [
+            'ip' => $clientIP,
+            'user_agent' => $request->userAgent(),
+            'url' => $request->fullUrl()
+        ]);
+        
+        abort(403, 'IP not authorized for webhook');
+    }
+    
+    /**
+     * Check if IP is in CIDR range
+     */
+    private function ipInRange($ip, $range)
+    {
+        if (strpos($range, '/') === false) {
+            // Single IP
+            return $ip === $range;
+        }
+        
+        // CIDR range
+        list($subnet, $bits) = explode('/', $range);
+        $ip = ip2long($ip);
+        $subnet = ip2long($subnet);
+        $mask = -1 << (32 - $bits);
+        $subnet &= $mask;
+        return ($ip & $mask) == $subnet;
+    }
 
     /**
      * Midtrans server-to-server notification (webhook)
@@ -20,10 +77,13 @@ class PaymentController extends Controller
      */
     public function midtransNotification(Request $request)
     {
+        // SECURITY ENHANCEMENT: Validate request IP against Midtrans IP ranges
+        $this->validateMidtransIP($request);
+        
         $raw = $request->getContent();
         $data = json_decode($raw, true);
         if (! is_array($data)) {
-            Log::warning('Midtrans webhook: invalid JSON payload');
+            Log::warning('Midtrans webhook: invalid JSON payload', ['ip' => $request->ip()]);
             return response()->json(['error' => 'invalid_payload'], 400);
         }
 
@@ -37,26 +97,45 @@ class PaymentController extends Controller
             return response()->json(['error' => 'order_id missing'], 400);
         }
 
-        // Verify Midtrans signature_key (sha512 of order_id + transaction_status + gross_amount + server_key)
-    // Prefer configuration-driven server key so deployments can centralize secrets
-    $serverKey = config('services.midtrans.server_key') ?: env('MIDTRANS_SERVER_KEY');
-        $hasServerKey = ! empty($serverKey);
+        // SECURITY ENHANCEMENT: Verify Midtrans signature_key with enhanced validation
+        // (sha512 of order_id + transaction_status + gross_amount + server_key)
+        $serverKey = config('services.midtrans.server_key') ?: env('MIDTRANS_SERVER_KEY');
+        
+        if (! $serverKey) {
+            Log::error('Midtrans webhook: server key not configured - SECURITY RISK', ['order_id' => $orderId]);
+            return response()->json(['error' => 'server_configuration_error'], 500);
+        }
+        
         // Midtrans sends signature_key in JSON body; also accept common headers as fallback
         $providedSignature = $data['signature_key'] ?? $request->header('X-Signature') ?? $request->header('X-Callback-Signature') ?? null;
-        if (! $hasServerKey || ! $providedSignature) {
-            Log::notice('Midtrans webhook: signature not provided or server key missing', ['order_id' => $orderId, 'has_server_key' => $hasServerKey, 'has_signature' => (bool) $providedSignature]);
-            return response()->json(['error' => 'signature_missing_or_server_key_missing'], 403);
+        
+        if (! $providedSignature) {
+            Log::warning('Midtrans webhook: signature missing - potential attack', [
+                'order_id' => $orderId, 
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent()
+            ]);
+            return response()->json(['error' => 'signature_required'], 403);
         }
 
+        // ENHANCED SECURITY: Strict signature verification with timing attack protection
         $grossStr = (string) ($data['gross_amount'] ?? '');
         $toHash = $orderId . ($txnStatus ?? '') . $grossStr . $serverKey;
         $expected = hash('sha512', $toHash);
+        
+        // Use timing-safe comparison to prevent timing attacks
         if (! hash_equals($expected, $providedSignature)) {
-            Log::warning('Midtrans webhook: signature mismatch', ['order_id' => $orderId]);
+            Log::warning('Midtrans webhook: signature verification failed - potential attack', [
+                'order_id' => $orderId,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'expected_length' => strlen($expected),
+                'provided_length' => strlen($providedSignature)
+            ]);
             return response()->json(['error' => 'invalid_signature'], 403);
         }
 
-        Log::info('Midtrans webhook: signature verified', ['order_id' => $orderId]);
+        Log::info('Midtrans webhook: signature verified successfully', ['order_id' => $orderId]);
 
         // Only act when transaction is settled (server-to-server confirmed)
         $lower = strtolower((string) $txnStatus);

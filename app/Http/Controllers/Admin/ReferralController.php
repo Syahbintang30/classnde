@@ -37,8 +37,9 @@ class ReferralController extends Controller
     // Show leaderboard of users who referred the most new users
     public function leaderboard(Request $request)
     {
-        // count referred users grouped by referrer
-        $rows = User::selectRaw('referred_by, count(*) as referrals')
+        // Use safer query builder methods instead of raw SQL
+        $rows = User::select('referred_by')
+            ->selectRaw('COUNT(*) as referrals')
             ->whereNotNull('referred_by')
             ->groupBy('referred_by')
             ->orderByDesc('referrals')
@@ -99,11 +100,13 @@ class ReferralController extends Controller
                         $q->whereIn('name', ['Beginner', 'Intermediate'])
                             ->orWhere('slug', 'upgrade-intermediate');
                 })->pluck('id')->toArray();
+        $maxTickets = config('constants.business_logic.referral_tickets_max');
+        
         $data = $request->validate([
             'package_id' => ['nullable', 'integer', function($attr, $value, $fail) use ($allowed) {
                 if ($value !== null && ! in_array((int)$value, $allowed)) $fail('Selected package is not allowed.');
             }],
-            'available_tickets' => 'required|integer|min:0|max:1000',
+            'available_tickets' => "required|integer|min:0|max:{$maxTickets}",
         ]);
 
         // Update package

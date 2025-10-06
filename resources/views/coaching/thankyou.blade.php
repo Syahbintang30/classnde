@@ -20,7 +20,7 @@
             <div class="steps" aria-hidden="true">
                 <div class="step complete"><i class="fa fa-info"></i></div>
                 <div class="line"></div>
-                <div class="step complete"><i class="fa fa-credit-card"></i></div>
+                <div class="step complete"><i class="fa-solid fa-credit-card" aria-hidden="true"></i></div>
                 <div class="line"></div>
                 <div class="step complete"><i class="fa fa-check"></i></div>
             </div>

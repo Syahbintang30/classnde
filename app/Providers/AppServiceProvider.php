@@ -28,9 +28,9 @@ class AppServiceProvider extends ServiceProvider
     // Register user observer to ensure programmatic user creation also receives a free ticket
     User::observe(UserObserver::class);
 
-    // Define admin gate: users with is_admin = true
+    // Define admin gate: users with is_admin = true OR is_superadmin = true
     Gate::define('admin', function (?User $user) {
-        return $user && $user->is_admin;
+        return $user && ($user->is_admin || $user->is_superadmin);
     });
     }
 }

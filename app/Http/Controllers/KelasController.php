@@ -112,7 +112,12 @@ class KelasController extends Controller
         // Only return content for lessons of type 'course'
         if ($lesson->type !== 'course') {
             // return an empty partial so AJAX consumers gracefully handle it
-            return view('kelas._lesson_content', ['lesson' => $lesson->loadMissing(['topics' => function($q){ $q->whereRaw('1 = 0'); }])]);
+            // Use safe approach instead of raw SQL for getting empty results
+            return view('kelas._lesson_content', [
+                'lesson' => $lesson->loadMissing(['topics' => function($q){ 
+                    $q->where('id', '=', -1); // Safe way to get no results
+                }])
+            ]);
         }
         $lesson->load(['topics' => function($q){ $q->orderBy('position'); }]);
         return view('kelas._lesson_content', compact('lesson'));
@@ -302,20 +307,10 @@ class KelasController extends Controller
                                     $user = \App\Models\User::where('email', $pre['email'])->first();
                                     Auth::login($user);
                                 } else {
-                                    // Decrypt stored pre_register password if present, otherwise generate a random one
-                                    $plainPassword = null;
-                                    try {
-                                        if (! empty($pre['password'])) {
-                                            $plainPassword = \Illuminate\Support\Facades\Crypt::decryptString($pre['password']);
-                                        }
-                                    } catch (\Throwable $e) {
-                                        // decryption failed - ignore and fallback to random password
-                                        $plainPassword = null;
-                                    }
-                                    if (empty($plainPassword)) {
-                                        $plainPassword = str()->random(12);
-                                    }
-
+                                    // SECURITY FIX: Generate random secure password instead of using stored password
+                                    // This eliminates password storage vulnerability in session
+                                    $plainPassword = str()->random(16); // Generate secure random password
+                                    
                                     $user = \App\Models\User::create([
                                         'name' => $pre['name'] ?? 'User',
                                         'email' => $pre['email'],
@@ -333,6 +328,15 @@ class KelasController extends Controller
                                         }
                                     }
                                     event(new \Illuminate\Auth\Events\Registered($user));
+                                    
+                                    // Send welcome email with password to new user
+                                    try {
+                                        $user->notify(new \App\Notifications\WelcomeWithPasswordNotification($plainPassword));
+                                    } catch (\Throwable $e) {
+                                        // Log error but don't fail the registration process
+                                        \Illuminate\Support\Facades\Log::error('Failed to send welcome email: ' . $e->getMessage());
+                                    }
+                                    
                                     Auth::login($user);
                                 }
                                 $request->session()->forget('pre_register');

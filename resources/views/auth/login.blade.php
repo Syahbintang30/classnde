@@ -12,22 +12,50 @@
 
                 {{-- Consolidated alerts: success, error, and validation list --}}
                 @if(session('status'))
-                    <div class="alert success">{{ session('status') }}</div>
+                    <div class="alert alert-success">
+                        <div class="alert-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22,4 12,14.01 9,11.01"></polyline>
+                            </svg>
+                        </div>
+                        <div class="alert-content">{{ session('status') }}</div>
+                    </div>
                 @endif
+
                 @if(session('error'))
-                    <div class="alert error">{{ session('error') }}</div>
+                    <div class="alert alert-error">
+                        <div class="alert-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                        </div>
+                        <div class="alert-content">{{ session('error') }}</div>
+                    </div>
                 @endif
 
                 @if($errors->any())
-                    <div class="alert error">
-                        <strong>Login failed — please check the following:</strong>
-                        <ul style="margin-top:8px;padding-left:18px">
-                            @foreach($errors->all() as $err)
-                                <li>{{ $err }}</li>
-                            @endforeach
-                        </ul>
-                        <div style="margin-top:10px;font-size:13px;opacity:0.85">
-                            Possible reasons: incorrect password, unregistered email, or too many failed attempts. If you forgot your password, use the <a href="{{ route('password.request') }}" style="color:#fff;text-decoration:underline">password reset</a> link.
+                    <div class="alert alert-error">
+                        <div class="alert-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <triangle points="7.86 2 16.14 2 22 13.86 18.14 22 9.86 22 4 13.86"></triangle>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">Login gagal. Periksa email dan password Anda.</div>
+                            <ul class="error-list">
+                                @foreach($errors->all() as $err)
+                                    <li>{{ $err }}</li>
+                                @endforeach
+                            </ul>
+                            <div class="alert-hint">
+                                Kemungkinan penyebab: password salah, email belum terdaftar, atau terlalu banyak percobaan login. 
+                                Jika lupa password, gunakan <a href="{{ route('password.request') }}" class="alert-link">password reset</a>.
+                            </div>
                         </div>
                     </div>
                 @endif
@@ -36,14 +64,27 @@
                     @csrf
                     <label class="field">
                         <span class="label-text">Email</span>
-                        <input name="email" type="email" value="{{ old('email') }}" required autofocus class="input" />
-                        @error('email')<div class="error">{{ $message }}</div>@enderror
+                        <input name="email" type="email" value="{{ old('email') }}" required autofocus 
+                               class="input @error('email') input-error @enderror" 
+                               placeholder="Masukkan email Anda" />
+                        @error('email')
+                            <div class="field-error">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                </svg>
+                                <span>{{ $message }}</span>
+                            </div>
+                        @enderror
                     </label>
 
                     <label class="field">
                         <span class="label-text">Password</span>
                         <div class="password-field">
-                            <input name="password" type="password" required class="input" />
+                            <input name="password" type="password" required 
+                                   class="input @error('password') input-error @enderror" 
+                                   placeholder="Masukkan password Anda" />
                             <button type="button" class="password-toggle" aria-label="Toggle password visibility">
                                 <!-- eye (visible) icon -->
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -52,18 +93,33 @@
                                 </svg>
                             </button>
                         </div>
-                        @error('password')<div class="error">{{ $message }}</div>@enderror
+                        @error('password')
+                            <div class="field-error">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                                </svg>
+                                <span>{{ $message }}</span>
+                            </div>
+                        @enderror
                     </label>
 
                     <div class="form-meta">
-                        <label class="remember"><input type="checkbox" name="remember" /> Remember me</label>
+                        <label class="remember">
+                            <input type="checkbox" name="remember" />
+                            <span>Ingat saya</span>
+                        </label>
                         @if(Route::has('password.request'))
-                            <a href="{{ route('password.request') }}" class="forgot">Forgot password?</a>
+                            <a href="{{ route('password.request') }}" class="forgot">Lupa kata sandi?</a>
                         @endif
                     </div>
 
                     <div class="actions">
-                        <button type="submit" class="btn btn-primary">Login</button>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Masuk Sekarang
+                        </button>
                     </div>
                 </form>
             </div>
@@ -71,9 +127,12 @@
 
         <aside class="signup-card">
             <div>
-                <h2>New here?</h2>
-                <p class="muted">Create a free account to start learning and book coaching sessions.</p>
-                <a href="{{ route('registerclass') }}" class="btn btn-outline">Create account</a>
+                <h2>Pengguna Baru?</h2>
+                <p class="muted">Buat akun gratis untuk mulai belajar dan memesan sesi coaching.</p>
+                <a href="{{ route('registerclass') }}" class="btn btn-outline">
+                    <i class="fas fa-user-plus"></i>
+                    Daftar Sekarang
+                </a>
             </div>
         </aside>
     </div>
@@ -91,14 +150,31 @@
     h2{margin:0 0 10px;font-size:20px}
     .muted{opacity:0.75;margin-bottom:18px}
 
-    .alert{background:#111;padding:10px;border-radius:8px;margin-bottom:14px}
+    /* Alert styles */
+    .alert{display:flex;align-items:flex-start;gap:12px;padding:16px;border-radius:12px;margin-bottom:20px;border:1px solid transparent}
+    .alert-success{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.2);color:#22c55e}
+    .alert-error{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2);color:#ef4444}
+    .alert-icon{flex-shrink:0;margin-top:1px}
+    .alert-content{flex:1;line-height:1.5}
+    .alert-title{font-weight:600;margin-bottom:8px;font-size:14px}
+    .error-list{margin:8px 0;padding-left:16px;font-size:13px;opacity:0.9}
+    .error-list li{margin-bottom:4px}
+    .alert-hint{margin-top:12px;font-size:12px;opacity:0.8;line-height:1.4}
+    .alert-link{color:inherit;text-decoration:underline;font-weight:500}
+    .alert-link:hover{opacity:0.8}
 
     /* Form fields */
-    .field{display:block;margin-bottom:14px}
-    .label-text{display:block;font-size:13px;margin-bottom:8px;opacity:0.85}
-    .input{width:100%;padding:12px 40px 12px 14px;border-radius:10px;background:transparent;border:1px solid #2a2a2a;color:#fff;outline:none}
-    .input:focus{border-color:#fff;box-shadow:0 6px 18px rgba(255,255,255,0.04)}
-    .error{color:#ff6b6b;margin-top:8px;font-size:13px}
+    .field{display:block;margin-bottom:20px}
+    .label-text{display:block;font-size:14px;margin-bottom:8px;font-weight:500;color:#fff}
+    .input{width:100%;padding:14px 40px 14px 16px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#fff;outline:none;font-size:15px;transition:all 0.2s ease}
+    .input::placeholder{color:rgba(255,255,255,0.4)}
+    .input:focus{border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.08);box-shadow:0 0 0 3px rgba(255,255,255,0.1)}
+    .input-error{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.05)}
+    .input-error:focus{border-color:rgba(239,68,68,0.6);box-shadow:0 0 0 3px rgba(239,68,68,0.1)}
+    
+    /* Field error messages */
+    .field-error{display:flex;align-items:center;gap:6px;margin-top:8px;color:#ef4444;font-size:13px;font-weight:500}
+    .field-error svg{flex-shrink:0}
 
     /* password toggle */
     .password-field{position:relative}
@@ -106,20 +182,41 @@
     .password-toggle svg{width:18px;height:18px;opacity:0.95}
     .password-toggle:focus{outline:none;box-shadow:0 0 0 3px rgba(255,255,255,0.06)}
 
-    .form-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    .remember{opacity:0.95;font-size:14px}
-    .forgot{color:#fff;opacity:0.85;text-decoration:underline;font-size:14px}
+    .form-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;margin-top:8px}
+    .remember{opacity:0.9;font-size:14px;display:flex;align-items:center;gap:8px;cursor:pointer}
+    .remember input[type="checkbox"]{width:16px;height:16px;accent-color:#fff}
+    .forgot{color:#fff;opacity:0.75;text-decoration:underline;font-size:14px;transition:opacity 0.2s ease}
+    .forgot:hover{opacity:1}
 
-    /* Buttons (monochrome) */
-    .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 18px;border-radius:999px;font-weight:700;text-decoration:none;cursor:pointer;transition:transform .14s ease,box-shadow .14s ease,opacity .14s ease}
-    .btn-primary{background:#fff;color:#000;border:1px solid rgba(255,255,255,0.06)}
-    .btn-primary:hover{background:#000;color:#fff;box-shadow:0 18px 40px rgba(0,0,0,0.6);transform:translateY(-4px)}
-    .btn-primary:active{transform:translateY(-2px)}
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:10px;font-weight:600;text-decoration:none;cursor:pointer;transition:all 0.2s ease;font-size:15px;border:none;min-height:48px}
+    .btn-primary{background:#fff;color:#000;box-shadow:0 2px 8px rgba(255,255,255,0.1)}
+    .btn-primary:hover{background:#f0f0f0;transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,255,255,0.2)}
+    .btn-primary:active{transform:translateY(0);box-shadow:0 2px 8px rgba(255,255,255,0.1)}
 
-    .btn-outline{background:transparent;color:#fff;border:1px solid #fff;padding:10px 18px;border-radius:999px}
-    .btn-outline:hover{background:#fff;color:#000;box-shadow:0 18px 40px rgba(0,0,0,0.6);transform:translateY(-4px)}
+    .btn-outline{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.2)}
+    .btn-outline:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.4);transform:translateY(-1px)}
 
-    .actions{text-align:right}
+    .actions{text-align:right;margin-top:8px}
+
+    /* Enhanced responsive design */
+    @media (max-width: 768px) {
+        .main-container{flex-direction:column;min-height:100vh}
+        .login-card,.signup-card{width:100%;border-radius:0}
+        .login-card{padding:32px 24px}
+        .signup-card{padding:24px;background:rgba(255,255,255,0.05)}
+        .title{font-size:24px}
+        .subtitle{font-size:16px}
+    }
+
+    /* Loading state and accessibility */
+    .btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+    .btn.loading{position:relative;color:transparent}
+    .btn.loading::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border:2px solid currentColor;border-top:2px solid transparent;border-radius:50%;animation:spin 1s linear infinite}
+
+    @keyframes spin{0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
+
+    .form-group input:focus,.btn:focus{outline:2px solid rgba(255,255,255,0.5);outline-offset:2px}
 
     @media (max-width:980px){.login-wrap{width:92%;flex-direction:column}.signup-card{width:100%}}
     @media (max-width:480px){.login-card-inner{padding:20px}.signup-card{padding:20px}}
@@ -143,6 +240,25 @@
             } else {
                 input.type = 'password';
                 btn.innerHTML = eye;
+            }
+        });
+
+        // Add loading state to form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const submitBtn = document.querySelector('.btn-primary');
+            
+            if (form && submitBtn) {
+                form.addEventListener('submit', function() {
+                    submitBtn.classList.add('loading');
+                    submitBtn.disabled = true;
+                    
+                    // Reset after timeout as fallback
+                    setTimeout(function() {
+                        submitBtn.classList.remove('loading');
+                        submitBtn.disabled = false;
+                    }, 10000);
+                });
             }
         });
     </script>
