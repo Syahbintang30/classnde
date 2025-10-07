@@ -40,22 +40,13 @@
                     <div class="alert alert-error">
                         <div class="alert-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <triangle points="7.86 2 16.14 2 22 13.86 18.14 22 9.86 22 4 13.86"></triangle>
-                                <line x1="12" y1="9" x2="12" y2="13"></line>
-                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
                             </svg>
                         </div>
                         <div class="alert-content">
-                            <div class="alert-title">Login gagal. Periksa email dan password Anda.</div>
-                            <ul class="error-list">
-                                @foreach($errors->all() as $err)
-                                    <li>{{ $err }}</li>
-                                @endforeach
-                            </ul>
-                            <div class="alert-hint">
-                                Kemungkinan penyebab: password salah, email belum terdaftar, atau terlalu banyak percobaan login. 
-                                Jika lupa password, gunakan <a href="{{ route('password.request') }}" class="alert-link">password reset</a>.
-                            </div>
+                            <div class="alert-title">Login gagal. Periksa email atau password.</div>
                         </div>
                     </div>
                 @endif
