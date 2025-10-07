@@ -23,20 +23,8 @@
                     </div>
                 @endif
 
-                @if(session('error'))
-                    <div class="alert alert-error">
-                        <div class="alert-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="15" y1="9" x2="9" y2="15"></line>
-                                <line x1="9" y1="9" x2="15" y2="15"></line>
-                            </svg>
-                        </div>
-                        <div class="alert-content">{{ session('error') }}</div>
-                    </div>
-                @endif
-
-                @if($errors->any())
+                {{-- Show a single error alert: prefer session('error') else validation errors --}}
+                @if(session('error') || $errors->any())
                     <div class="alert alert-error">
                         <div class="alert-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -46,7 +34,24 @@
                             </svg>
                         </div>
                         <div class="alert-content">
-                            <div class="alert-title">Login gagal. Periksa email atau password.</div>
+                            {{-- Use the explicit session error message when present, otherwise show a generic localized message --}}
+                            @if(session('error'))
+                                <div class="alert-title">{{ session('error') }}</div>
+                            @else
+                                <div class="alert-title">Login gagal. Periksa email atau password.</div>
+                            @endif
+                            {{-- Optionally show field validation messages (if any) as a concise list below the title --}}
+                            @if($errors->any())
+                                <ul class="error-list">
+                                    @foreach($errors->all() as $err)
+                                        {{-- Skip Laravel's default generic English credentials message if present --}}
+                                        @if(str_contains(strtolower($err), 'these credentials do not match') )
+                                            @continue
+                                        @endif
+                                        <li>{{ $err }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
                         </div>
                     </div>
                 @endif
@@ -59,13 +64,20 @@
                                class="input @error('email') input-error @enderror" 
                                placeholder="Masukkan email Anda" />
                         @error('email')
+                            {{-- Hide Laravel's default English 'These credentials...' message and prefer localized text when appropriate --}}
+                            @php
+                                $msg = $message;
+                                if(str_contains(strtolower($msg), 'these credentials do not match')) {
+                                    $msg = 'Email atau password tidak cocok.';
+                                }
+                            @endphp
                             <div class="field-error">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <line x1="15" y1="9" x2="9" y2="15"></line>
                                     <line x1="9" y1="9" x2="15" y2="15"></line>
                                 </svg>
-                                <span>{{ $message }}</span>
+                                <span>{{ $msg }}</span>
                             </div>
                         @enderror
                     </label>
