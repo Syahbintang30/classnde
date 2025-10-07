@@ -12,26 +12,16 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    // The dedicated /register page has been removed. Redirect visitors to the
-    // public purchase/landing page which now acts as the single registration
-    // entrypoint.
     Route::get('register', function () { return redirect(route('registerclass')); });
-
-    // Capture referral codes passed as query param and store in session so
-    // registration form/checkout can associate new users with referrers.
     Route::get('r', function (\Illuminate\Http\Request $request) {
         $code = $request->query('ref') ?: $request->query('referral');
         if ($code) {
             $request->session()->put('referral', $code);
         }
-        // redirect to registration entrypoint
         return redirect(route('registerclass'));
     })->name('referral.capture');
 
-    // Accept registration submissions from the public landing at /registerclass
-    // so /registerclass becomes the single register address.
     Route::post('registerclass', [RegisteredUserController::class, 'store'])->name('registerclass.register');
-
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 

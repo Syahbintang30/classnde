@@ -213,7 +213,29 @@
                         // pending may transition to settlement; also start polling
                         startPollingForSettlement(result);
                     },
-                    onError: function(err){ alert('Payment Failed. Please try again.'); }
+                    onError: function(err){ alert('Payment Failed. Please try again.'); },
+                    onClose: function(){
+                        // User closed the Midtrans popup without completing payment.
+                        // Keep them on the payment page and show a small notice with retry instructions.
+                        try {
+                            var pd = document.getElementById('payment-details-display');
+                            if (pd) {
+                                var notice = document.getElementById('midtrans-close-notice');
+                                if (! notice) {
+                                    notice = document.createElement('div');
+                                    notice.id = 'midtrans-close-notice';
+                                    notice.style.marginTop = '12px';
+                                    notice.style.padding = '10px';
+                                    notice.style.background = 'rgba(255,255,255,0.03)';
+                                    notice.style.border = '1px solid rgba(255,255,255,0.04)';
+                                    notice.style.color = '#ffd';
+                                    notice.style.borderRadius = '6px';
+                                    notice.innerHTML = '<strong>Pembayaran belum selesai.</strong> Anda tetap di halaman pembayaran. Klik tombol <em>PAY & Start Learning</em> lagi untuk mencoba ulang, atau hubungi support jika perlu bantuan.';
+                                    pd.appendChild(notice);
+                                }
+                            }
+                        } catch(e) { console.error('onClose handler failed', e); }
+                    }
                 });
             } else {
                 alert('Failed to process payment. Please try again in a moment.');
