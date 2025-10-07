@@ -48,6 +48,10 @@ class AuthenticatedSessionController extends Controller
     $request->session()->regenerateToken();
 
     // after logout, redirect visitors to the public company profile at /ndeofficial
+    // use the named route if available so URL generation follows app configuration
+    if (function_exists('route')) {
+        return redirect()->route('compro');
+    }
     return redirect(url('/ndeofficial'));
     }
 }

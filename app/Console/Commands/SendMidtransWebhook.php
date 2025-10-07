@@ -15,7 +15,8 @@ class SendMidtransWebhook extends Command
      *
      * @var string
      */
-    protected $signature = 'midtrans:test-webhook {--url=http://127.0.0.1:8000/payments/midtrans-notify} {--order=phpunit-smoke} {--status=settlement} {--amount=1000} {--dry-run}';
+    // default URL uses APP_URL from environment with fallback to localhost
+    protected $signature = "midtrans:test-webhook {--url= : target URL (defaults to APP_URL/payments/midtrans-notify)} {--order=phpunit-smoke} {--status=settlement} {--amount=1000} {--dry-run}";
 
     /**
      * The console command description.
@@ -26,7 +27,7 @@ class SendMidtransWebhook extends Command
 
     public function handle()
     {
-        $url = $this->option('url');
+    $url = $this->option('url') ?: (config('app.url') ? rtrim(config('app.url'), '/') . '/payments/midtrans-notify' : env('APP_URL') . '/payments/midtrans-notify');
         $orderId = $this->option('order') ?: 'phpunit-smoke-' . uniqid();
         $status = $this->option('status') ?: 'settlement';
         $amount = (int) $this->option('amount');

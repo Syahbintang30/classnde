@@ -124,7 +124,7 @@
                             }
                         @endphp
 
-                        <a href="http://127.0.0.1:8000/ndeofficial" class="{{ request()->is('ndeofficial*') ? 'active' : '' }}">Home</a>
+                        <a href="{{ url('/ndeofficial') }}" class="{{ request()->is('ndeofficial*') ? 'active' : '' }}">Home</a>
                         <a href="{{ route('registerclass') }}" class="{{ request()->routeIs('registerclass') ? 'active' : '' }}">Courses</a>
 
                         {{-- Only show lesson/coaching/song tutorial links to authenticated users --}}
