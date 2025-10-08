@@ -185,6 +185,7 @@ Route::get('/api/transactions/status', [App\Http\Controllers\PaymentController::
 Route::get('/payments/thankyou', [App\Http\Controllers\PaymentRedirectController::class, 'thankyou'])->name('payments.thankyou');
 Route::get('/payments/error', [App\Http\Controllers\PaymentRedirectController::class, 'error'])->name('payments.error');
 Route::get('/payments/status', [App\Http\Controllers\PaymentRedirectController::class, 'status'])->name('payments.status');
+Route::get('/payments/autologin', [App\Http\Controllers\PaymentRedirectController::class, 'autoLogin'])->name('payments.autologin');
 // Midtrans finish redirect (Snap finish URL). This was missing; add explicit route so external redirect works.
 Route::get('/payments/finish', [App\Http\Controllers\PaymentRedirectController::class, 'finish'])->name('payments.finish');
 

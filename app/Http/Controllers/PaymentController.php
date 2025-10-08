@@ -1,4 +1,4 @@
-<?php
+        if (! $txn) {
 
 namespace App\Http\Controllers;
 
@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Transaction;
 use App\Models\UserPackage;
-use App\Models\Package;
+            $generatedAutoLogin = null;
+            if (!$userId && is_array($cached) && isset($cached['pre_register']) && isset($cached['pre_register']['email'])) {
 use App\Models\User;
 
 class PaymentController extends Controller
@@ -30,9 +31,15 @@ class PaymentController extends Controller
         $midtransIPs = [
             '103.208.23.0/24',
             '103.208.23.6',
+                        // Generate one-time autologin token
+                        try {
+                            $generatedAutoLogin = bin2hex(random_bytes(24));
+                            Cache::put('autologin:' . $generatedAutoLogin, $userId, now()->addMinutes(20));
+                        } catch (\Throwable $e) {}
             '103.208.23.102', 
             '103.127.16.0/23',
             '103.127.17.6',
+                    if ($generatedAutoLogin) { $cached['autologin_token'] = $generatedAutoLogin; }
             '209.58.183.0/24'
         ];
         
@@ -251,6 +258,8 @@ class PaymentController extends Controller
                             'source' => 'midtrans',
                         ]);
                     }
+                    // ensure user's package_id set if empty
+                    try { $user = User::find($txn->user_id); if ($user && empty($user->package_id)) { $user->package_id = $txn->package_id; $user->save(); }} catch (\Throwable $e) {}
                 } else {
                     Log::warning('Midtrans webhook: upgrade-intermediate purchase not eligible, skipping grant', ['order_id' => $orderId, 'user_id' => $txn->user_id]);
                 }
@@ -264,6 +273,7 @@ class PaymentController extends Controller
                 try {
                     $txn->package_id = $cached['package_id'];
                     $txn->save();
+                    try { $user = User::find($txn->user_id); if ($user && empty($user->package_id)) { $user->package_id = $txn->package_id; $user->save(); }} catch (\Throwable $e) {}
                 } catch (\Throwable $e) {}
             }
         }

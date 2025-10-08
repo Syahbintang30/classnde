@@ -100,7 +100,20 @@ class PaymentRedirectController extends Controller
             $ticket = \App\Models\CoachingTicket::where('user_id', $user->id)->orderByDesc('id')->first();
         }
 
-        // Render the same thankyou view used by KelasController but include transaction info
+        // Prefer new modern payments.thankyou view if exists
+        $firstLesson = null;
+        try { $firstLesson = \App\Models\Lesson::where('type','course')->orderBy('position')->first(); } catch (\Throwable $e) {}
+        $orderIdVar = $orderId; // alias for clarity
+        if (view()->exists('payments.thankyou')) {
+            return view('payments.thankyou', [
+                'user' => $user,
+                'package' => $package,
+                'ticket' => $ticket,
+                'txn' => $txn,
+                'orderId' => $orderIdVar,
+                'firstLesson' => $firstLesson,
+            ]);
+        }
         return view('kelas.thankyou', compact('user', 'package', 'ticket'));
     }
 
@@ -128,8 +141,47 @@ class PaymentRedirectController extends Controller
             if ($remote) return response()->json(['status' => $remote['transaction_status'] ?? ($remote['status_code'] ?? 'unknown'), 'raw' => $remote]);
             return response()->json(['error' => 'not_found'], 404);
         }
+        // Attempt to expose autologin token (one-time) if settlement and user not logged in
+        $autoToken = null;
+            if (!\Illuminate\Support\Facades\Auth::check()) {
+            try {
+                $cached = \Illuminate\Support\Facades\Cache::get('pending_txn:' . $txn->order_id);
+                if (is_array($cached) && isset($cached['autologin_token'])) {
+                    $autoToken = $cached['autologin_token'];
+                }
+            } catch (\Throwable $e) {}
+        }
+        return response()->json([
+            'status' => $txn->status,
+            'transaction' => $txn,
+            'autologin_token' => $autoToken,
+        ]);
+    }
 
-        return response()->json(['status' => $txn->status, 'transaction' => $txn]);
+    /**
+     * One-time autologin endpoint: use token generated at webhook settlement for guest purchases.
+     */
+    public function autoLogin(Request $request)
+    {
+        $token = $request->query('token');
+        $orderId = $request->query('order_id') ?? $request->query('orderId');
+        if (!$token || !$orderId) {
+            return redirect()->route('payments.error', ['message' => 'Autologin token/order_id missing']);
+        }
+        $cacheKey = 'autologin:' . $token;
+        $userId = \Illuminate\Support\Facades\Cache::get($cacheKey);
+        if (!$userId) {
+            return redirect()->route('payments.error', ['message' => 'Autologin token invalid atau kadaluarsa.']);
+        }
+        $user = \App\Models\User::find($userId);
+        if (!$user) {
+            return redirect()->route('payments.error', ['message' => 'User untuk token ini tidak ditemukan.']);
+        }
+        // consume token
+        try { \Illuminate\Support\Facades\Cache::forget($cacheKey); } catch (\Throwable $e) {}
+        // login user
+        \Illuminate\Support\Facades\Auth::login($user, false);
+        return redirect()->route('payments.thankyou', ['order_id' => $orderId]);
     }
 
     /**

@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function(){
     const maxAttempts = 60; // ~5 min if interval escalates
     let interval = 3000;
 
-    async function checkStatus(manual=false){
+        async function checkStatus(manual=false){
         if(!orderId) return;
         if(manual){ attempt = 0; interval = 3000; }
         try {
@@ -103,7 +103,12 @@ document.addEventListener('DOMContentLoaded', function(){
             if(['settlement','capture','success'].includes(String(rawStatus).toLowerCase())){
                 polling = false;
                 msg.textContent = 'Pembayaran terkonfirmasi. Mengarahkan...';
-                setTimeout(function(){ window.location.href = '/payments/thankyou?order_id=' + encodeURIComponent(orderId); }, 800);
+                    // if autologin token present (guest flow), redirect via autologin endpoint
+                    if(j.autologin_token){
+                        setTimeout(function(){ window.location.href = '/payments/autologin?token=' + encodeURIComponent(j.autologin_token) + '&order_id=' + encodeURIComponent(orderId); }, 600);
+                    } else {
+                        setTimeout(function(){ window.location.href = '/payments/thankyou?order_id=' + encodeURIComponent(orderId); }, 800);
+                    }
                 return;
             }
         } catch(e){ msg.textContent = 'Gagal memeriksa (' + (e.message||e) + ')'; }
