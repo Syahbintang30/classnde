@@ -148,14 +148,51 @@ class PaymentController extends Controller
         // For settled payments, create DB transaction only if not present
         $txn = Transaction::where('order_id', $orderId)->latest()->first();
         if (! $txn) {
-            // try to hydrate from cache
+            // try to hydrate from cache (includes guest pre_register snapshot)
             $cached = Cache::get('pending_txn:' . $orderId, null);
             $payloadAmount = $data['gross_amount'] ?? ($cached['amount'] ?? null);
+
+            $userId = $cached['user_id'] ?? null;
+            $packageId = $cached['package_id'] ?? null;
+
+            // If no user yet (guest flow) but we have pre_register cached, create user now
+            if (!$userId && is_array($cached) && isset($cached['pre_register']) && isset($cached['pre_register']['email'])) {
+                try {
+                    $pre = $cached['pre_register'];
+                    $existing = \App\Models\User::where('email', $pre['email'])->first();
+                    if ($existing) {
+                        $userId = $existing->id;
+                    } else {
+                        $plainPassword = str()->random(16);
+                        $user = \App\Models\User::create([
+                            'name' => $pre['name'] ?? 'User',
+                            'email' => $pre['email'],
+                            'password' => \Illuminate\Support\Facades\Hash::make($plainPassword),
+                            'phone' => $pre['phone'] ?? null,
+                            'package_id' => null, // set after settlement grant
+                            'referred_by' => null,
+                        ]);
+                        if (! empty($pre['referral'])) {
+                            $referrer = \App\Models\User::where('referral_code', $pre['referral'])->first();
+                            if ($referrer) { $user->referred_by = $referrer->id; $user->save(); }
+                        }
+                        event(new \Illuminate\Auth\Events\Registered($user));
+                        try { $user->notify(new \App\Notifications\WelcomeWithPasswordNotification($plainPassword)); } catch (\Throwable $e) {}
+                        $userId = $user->id;
+                        // update cache so future logic sees user_id
+                        $cached['user_id'] = $userId;
+                        try { Cache::put('pending_txn:' . $orderId, $cached, now()->addHours(12)); } catch (\Throwable $e) {}
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Midtrans webhook: failed creating user from pre_register', ['order_id' => $orderId, 'err' => $e->getMessage()]);
+                }
+            }
+
             try {
                 $txn = Transaction::create([
                     'order_id' => $orderId,
-                    'user_id' => $cached['user_id'] ?? null,
-                    'package_id' => $cached['package_id'] ?? null,
+                    'user_id' => $userId,
+                    'package_id' => $packageId,
                     'method' => $cached['method'] ?? (isset($data['payment_type']) ? strtoupper($data['payment_type']) : null),
                     'amount' => $payloadAmount,
                     'original_amount' => $cached['original_amount'] ?? $payloadAmount,
@@ -219,6 +256,15 @@ class PaymentController extends Controller
                 }
             } catch (\Throwable $e) {
                 Log::error('Midtrans webhook: failed to create user package', ['err' => $e->getMessage(), 'order_id' => $orderId]);
+            }
+        } elseif ($successful && $txn->user_id && ! $txn->package_id) {
+            // package id missing on initial transaction creation; attempt to hydrate from cache
+            $cached = Cache::get('pending_txn:' . $orderId, null);
+            if (is_array($cached) && isset($cached['package_id']) && $cached['package_id']) {
+                try {
+                    $txn->package_id = $cached['package_id'];
+                    $txn->save();
+                } catch (\Throwable $e) {}
             }
         }
 

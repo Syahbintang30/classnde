@@ -364,7 +364,8 @@
                 .then(r => r.json()).then(json => {
                     if (json && json.status === 'settlement') {
                         // server recorded settlement; redirect to thankyou
-                        window.location.href = '/registerclass/' + lessonId + '/thankyou?order_id=' + encodeURIComponent(orderId);
+                        // Redirect to centralized payments thankyou route (handles settlement verification & rendering)
+                        window.location.href = '/payments/thankyou?order_id=' + encodeURIComponent(orderId);
                         return;
                     }
                     // not yet settled

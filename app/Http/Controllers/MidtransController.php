@@ -125,7 +125,7 @@ class MidtransController extends Controller
 
         // cache mapping so webhook can create DB transaction only on settlement
         try {
-            Cache::put('pending_txn:' . $externalOrderId, [
+            $pendingPayload = [
                 'user_id' => Auth::check() ? Auth::id() : null,
                 'package_id' => $data['package_id'] ?? null,
                 'lesson_id' => null,
@@ -137,7 +137,21 @@ class MidtransController extends Controller
                 'voucher_code' => $appliedVoucher ? $appliedVoucher->code : null,
                 'voucher_id' => $appliedVoucher ? $appliedVoucher->id : null,
                 'applied_voucher_percent' => $appliedVoucherPercent,
-            ], now()->addHours(24));
+            ];
+            // Include pre_register snapshot so webhook can still create the user if client never posts paymentComplete
+            if ($request->session()->has('pre_register')) {
+                $pre = $request->session()->get('pre_register');
+                // only keep safe fields
+                $pendingPayload['pre_register'] = [
+                    'name' => $pre['name'] ?? null,
+                    'email' => $pre['email'] ?? null,
+                    'phone' => $pre['phone'] ?? null,
+                    'package_id' => $pre['package_id'] ?? ($data['package_id'] ?? null),
+                    'referral' => $pre['referral'] ?? ($data['referral'] ?? null),
+                    'package_qty' => $pre['package_qty'] ?? ($data['package_qty'] ?? 1),
+                ];
+            }
+            Cache::put('pending_txn:' . $externalOrderId, $pendingPayload, now()->addHours(24));
         } catch (\Throwable $e) {
             // cache failure should not block token generation; log if necessary
         }
