@@ -1,14 +1,14 @@
-        if (! $txn) {
+<?php
 
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Transaction;
 use App\Models\UserPackage;
-            $generatedAutoLogin = null;
-            if (!$userId && is_array($cached) && isset($cached['pre_register']) && isset($cached['pre_register']['email'])) {
+use App\Models\Package;
 use App\Models\User;
 
 class PaymentController extends Controller
@@ -31,16 +31,10 @@ class PaymentController extends Controller
         $midtransIPs = [
             '103.208.23.0/24',
             '103.208.23.6',
-                        // Generate one-time autologin token
-                        try {
-                            $generatedAutoLogin = bin2hex(random_bytes(24));
-                            Cache::put('autologin:' . $generatedAutoLogin, $userId, now()->addMinutes(20));
-                        } catch (\Throwable $e) {}
-            '103.208.23.102', 
+            '103.208.23.102',
             '103.127.16.0/23',
             '103.127.17.6',
-                    if ($generatedAutoLogin) { $cached['autologin_token'] = $generatedAutoLogin; }
-            '209.58.183.0/24'
+            '209.58.183.0/24',
         ];
         
         foreach ($midtransIPs as $range) {
@@ -188,6 +182,12 @@ class PaymentController extends Controller
                         $userId = $user->id;
                         // update cache so future logic sees user_id
                         $cached['user_id'] = $userId;
+                        // generate autologin token
+                        try {
+                            $token = bin2hex(random_bytes(24));
+                            Cache::put('autologin:' . $token, $userId, now()->addMinutes(20));
+                            $cached['autologin_token'] = $token;
+                        } catch (\Throwable $e) {}
                         try { Cache::put('pending_txn:' . $orderId, $cached, now()->addHours(12)); } catch (\Throwable $e) {}
                     }
                 } catch (\Throwable $e) {
