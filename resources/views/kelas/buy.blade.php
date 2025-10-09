@@ -191,8 +191,13 @@
             <p style="opacity:0.7;margin-bottom:12px">You're logged in. Click below to continue to the secure payment step.</p>
 
             <div style="text-align:right;margin-bottom:12px">
-                {{-- link updated by JS to include selected package id as query param --}}
-                <a id="continue_payment_btn" href="{{ route('kelas.payment', $lesson->id) }}" style="background:#fff;color:#000;padding:10px 26px;border-radius:24px;font-weight:700;border:none;display:inline-block;text-decoration:none;">CONTINUE TO PAYMENT</a>
+                {{-- link updated by JS to include selected package id as query param; guard when no lesson exists --}}
+                @php $paymentBase = isset($lesson) && $lesson ? route('kelas.payment', $lesson->id) : null; @endphp
+                @if($paymentBase)
+                    <a id="continue_payment_btn" href="{{ $paymentBase }}" style="background:#fff;color:#000;padding:10px 26px;border-radius:24px;font-weight:700;border:none;display:inline-block;text-decoration:none;">CONTINUE TO PAYMENT</a>
+                @else
+                    <div style="padding:10px 14px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);font-size:13px;color:#ffd9d9;">Belum ada materi tersedia untuk pembayaran. Silakan kembali lagi nanti.</div>
+                @endif
             </div>
 
             <!-- Logged-in selected package preview + qty (mirrors guest preview) -->
@@ -388,13 +393,15 @@ document.addEventListener('DOMContentLoaded', function(){
             // update continue to payment link for logged-in users
             const continueBtn = document.getElementById('continue_payment_btn');
             if (continueBtn) {
-                const base = '{{ route('kelas.payment', $lesson->id) }}';
+                const base = @json(isset($lesson) && $lesson ? route('kelas.payment', $lesson->id) : null);
                 const pid = card.dataset.packageId || '';
                 const qty = pkgQtyHidden ? parseInt(pkgQtyHidden.value || '1', 10) : 1;
                 // append package_id, qty and referral as query params so server can pick them up for logged-in flow
                 const ref = document.getElementById('referral_code_input') ? document.getElementById('referral_code_input').value.trim() : (document.getElementById('hidden_referral_input') ? document.getElementById('hidden_referral_input').value.trim() : '');
-                const params = pid ? ('?package_id=' + encodeURIComponent(pid) + '&package_qty=' + encodeURIComponent(qty)) : '';
-                continueBtn.href = base + params + (ref ? (params ? '&referral=' + encodeURIComponent(ref) : '?referral=' + encodeURIComponent(ref)) : '');
+                if (base) {
+                    const params = pid ? ('?package_id=' + encodeURIComponent(pid) + '&package_qty=' + encodeURIComponent(qty)) : '';
+                    continueBtn.href = base + params + (ref ? (params ? '&referral=' + encodeURIComponent(ref) : '?referral=' + encodeURIComponent(ref)) : '');
+                }
             }
             // update guest register/login deep links with selection and redirect target
             const regBtn = document.getElementById('guest_register_btn');
@@ -402,7 +409,8 @@ document.addEventListener('DOMContentLoaded', function(){
             if (regBtn || logBtn) {
                 const pid = card.dataset.packageId || '';
                 const ref = document.getElementById('referral_code_input') ? document.getElementById('referral_code_input').value.trim() : '';
-                const payUrl = '{{ route('kelas.payment', $lesson->id) }}' + (pid ? ('?package_id=' + encodeURIComponent(pid)) : '');
+                const basePay = @json(isset($lesson) && $lesson ? route('kelas.payment', $lesson->id) : null);
+                const payUrl = basePay ? basePay + (pid ? ('?package_id=' + encodeURIComponent(pid)) : '') : null;
                 if (regBtn) {
                     let q = '';
                     if (pid || ref) {
@@ -411,10 +419,12 @@ document.addEventListener('DOMContentLoaded', function(){
                         if (ref) q += (pid ? '&' : '') + 'referral=' + encodeURIComponent(ref);
                     }
                     // add redirect_to param so after register we can continue to payment page
-                    regBtn.href = '{{ route('register') }}' + q + (q ? '&' : '?') + 'redirect_to=' + encodeURIComponent(payUrl);
+                    if (payUrl) regBtn.href = '{{ route('register') }}' + q + (q ? '&' : '?') + 'redirect_to=' + encodeURIComponent(payUrl);
+                    else regBtn.href = '{{ route('register') }}' + q;
                 }
                 if (logBtn) {
-                    logBtn.href = '{{ route('login') }}' + '?redirect_to=' + encodeURIComponent(payUrl);
+                    if (payUrl) logBtn.href = '{{ route('login') }}' + '?redirect_to=' + encodeURIComponent(payUrl);
+                    else logBtn.href = '{{ route('login') }}';
                 }
             }
             // update logged-in preview display

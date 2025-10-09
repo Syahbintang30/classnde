@@ -15,8 +15,12 @@ class KelasController extends Controller
     public function index()
     {
     // Dashboard becomes the buy/home page showing package options
-    // only show lessons of type 'course' on the buy page
+    // Prefer lessons of type 'course' on the buy page; gracefully fallback if none
     $lessons = Lesson::where('type', 'course')->with(['topics' => function($q){ $q->orderBy('position'); }])->orderBy('position')->get();
+    if ($lessons->isEmpty()) {
+        // Fallback: show any lessons ordered by position so $lesson is not null
+        $lessons = Lesson::with(['topics' => function($q){ $q->orderBy('position'); }])->orderBy('position')->get();
+    }
     /** @var \App\Models\User|null $user */
     $user = Auth::user();
 
@@ -81,7 +85,7 @@ class KelasController extends Controller
         // guests see the eligible beginner/intermediate packages only
         $packages = Package::whereIn('slug', $eligibleSlugs)->orderBy('price')->get();
     }
-    // pick a default lesson (first) so purchase route in the buy view has an id
+    // pick a default lesson (first) if available so purchase route in the buy view has an id
     $lesson = $lessons->first();
     // show buy page with packages
     return view('kelas.buy', ['lessons' => $lessons, 'packages' => $packages, 'lesson' => $lesson]);
