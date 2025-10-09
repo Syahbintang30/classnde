@@ -14,8 +14,13 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
+        // If a redirect_to query is present (e.g., coming from buy page), set intended URL
+        $redirect = $request->query('redirect_to');
+        if ($redirect) {
+            $request->session()->put('url.intended', $redirect);
+        }
         return view('auth.login');
     }
 

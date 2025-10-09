@@ -12,7 +12,8 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', function () { return redirect(route('registerclass')); });
+    // Show the dedicated registration page
+    Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
     Route::get('r', function (\Illuminate\Http\Request $request) {
         $code = $request->query('ref') ?: $request->query('referral');
         if ($code) {
@@ -21,6 +22,9 @@ Route::middleware('guest')->group(function () {
         return redirect(route('registerclass'));
     })->name('referral.capture');
 
+    // Primary registration POST endpoint
+    Route::post('register', [RegisteredUserController::class, 'store'])->name('register.store');
+    // Backward compatibility for old integrated register-at-buy flow
     Route::post('registerclass', [RegisteredUserController::class, 'store'])->name('registerclass.register');
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

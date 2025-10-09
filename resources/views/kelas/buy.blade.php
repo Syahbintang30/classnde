@@ -155,94 +155,37 @@
             <!-- ensure a global package qty hidden input exists for both guest and logged-in flows -->
             <input type="hidden" name="package_qty" value="1" id="selected_package_qty_input" />
                 @guest
-            <h2 style="font-size:20px;margin-bottom:12px">One More Step to Start Learning</h2>
-            <p style="opacity:0.7;margin-bottom:12px">Complete your details to unlock your chosen class and more</p>
+            <h2 style="font-size:20px;margin-bottom:12px">Buat Akun untuk Melanjutkan</h2>
+            <p style="opacity:0.7;margin-bottom:12px">Pilih kelas di kiri, lalu buat akun atau login untuk melanjutkan ke pembayaran yang aman.</p>
 
-    <form method="POST" action="{{ route('registerclass.register') }}">
-                @csrf
-                {{-- per-field inline errors only: show single alert under the field that has a problem --}}
+            <!-- hidden values for selection (kept for JS compatibility) -->
             <input type="hidden" name="selected_package" value="" id="selected_package_input" />
             <input type="hidden" name="selected_package_price" value="" id="selected_package_price_input" />
             <input type="hidden" name="referral" id="hidden_referral_input" value="{{ old('referral') ?? session('referral') ?? '' }}" />
-                <div style="margin-bottom:12px">
-                    <label style="display:block;margin-bottom:6px">Full Name</label>
-                    <input id="fullname_input" name="name" value="{{ old('name') }}" style="width:100%;padding:14px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
-                    @error('name') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
-                    <div id="name_error" style="display:none;color:#ffb3b3;margin-top:6px;font-size:13px"></div>
-                </div>
 
-                <div style="margin-bottom:12px">
-                    <label style="display:block;margin-bottom:6px">Email</label>
-                    <input name="email" type="email" value="{{ old('email') }}" required style="width:100%;padding:12px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
-                    @error('email') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
-                </div>
+            <div style="margin-bottom:12px">
+                <label style="display:block;margin-bottom:6px">Kode Referral (opsional)</label>
+                <input id="referral_code_input" name="referral" value="{{ old('referral') ?? session('referral') ?? '' }}" placeholder="Masukkan kode referral atau kosongkan" style="width:100%;padding:12px;background:transparent;border:1px solid #333;color:#fff !important;border-radius:4px;" />
+                @error('referral') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
+                <div id="referral_hint" style="margin-top:6px;color:rgba(255,255,255,0.6);font-size:13px">Jika Anda punya kode referral, masukkan untuk mendapatkan diskon.</div>
+            </div>
 
-                <div style="margin-bottom:12px">
-                    <label style="display:block;margin-bottom:6px">Phone</label>
-                    <input name="phone" value="{{ old('phone') }}" style="width:100%;padding:12px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
-                    @error('phone') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
+            <!-- Selected package preview for guests -->
+            <div id="selected_package_preview" style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <div style="font-size:13px;opacity:0.8">Kelas dipilih</div>
+                    <div id="selected_package_name" style="font-weight:700;margin-top:4px">-</div>
+                    <div id="selected_package_price_display" style="font-size:13px;opacity:0.85;margin-top:4px">Rp -</div>
+                    <div id="selected_package_original_price_display" style="font-size:12px;opacity:0.6;margin-top:6px;display:none">Harga asli: Rp -</div>
+                    <div id="selected_package_discount_display" style="font-size:12px;color:#b8f0c6;margin-top:6px;display:none">Diskon referral: -</div>
                 </div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.6)">Klik kartu lain untuk ganti kelas</div>
+            </div>
 
-                
-
-                <div style="margin-bottom:12px; position:relative;">
-                    <label style="display:block;margin-bottom:6px">Password</label>
-                    <div class="password-field" style="position:relative;">
-                        <input id="register-password" name="password" type="password" required style="width:100%;padding:14px 44px 14px 14px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
-                        @error('password') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
-                        <button type="button" id="toggle-password" aria-label="Show password" title="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div style="margin-bottom:12px; position:relative;">
-                    <label style="display:block;margin-bottom:6px">Confirm Password</label>
-                    <div class="password-field" style="position:relative;">
-                        <input id="register-password-confirm" name="password_confirmation" type="password" required style="width:100%;padding:14px 44px 14px 14px;background:transparent;border:1px solid #333;color:#fff;border-radius:4px;" />
-                        @error('password_confirmation') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
-                        <button type="button" id="toggle-password-confirm" aria-label="Show password" title="Show password" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
-                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </button>
-                    </div>
-                    <div id="confirm_password_error" style="display:none;color:#ffb3b3;margin-top:6px;font-size:13px"></div>
-                </div>
-
-                <div style="margin-bottom:12px">
-                    <label style="display:block;margin-bottom:6px">Referral code (optional)</label>
-                    <input id="referral_code_input" name="referral" value="{{ old('referral') ?? session('referral') ?? '' }}" placeholder="Enter referral code or leave empty" style="width:100%;padding:12px;background:transparent;border:1px solid #333;color:#fff !important;border-radius:4px;" />
-                    @error('referral') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
-                    <div id="referral_hint" style="margin-top:6px;color:rgba(255,255,255,0.6);font-size:13px">Jika Anda punya kode referral, masukkan untuk mendapatkan diskon.</div>
-                </div>
-
-                <!-- selected package preview moved here (above the continue button) -->
-                <div id="selected_package_preview" style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center">
-                    <div>
-                        <div style="font-size:13px;opacity:0.8">Class:</div>
-                        <div id="selected_package_name" style="font-weight:700;margin-top:4px">-</div>
-                        <div id="selected_package_price_display" style="font-size:13px;opacity:0.85;margin-top:4px">Rp -</div>
-                        <div id="selected_package_original_price_display" style="font-size:12px;opacity:0.6;margin-top:6px;display:none">Harga asli: Rp -</div>
-                        <div id="selected_package_discount_display" style="font-size:12px;color:#b8f0c6;margin-top:6px;display:none">Diskon referral: -</div>
-                        <div id="selected_package_qty_container" style="margin-top:8px;display:none;align-items:center;gap:8px;font-size:13px">
-                            <label style="opacity:0.8;margin-right:8px">Quantity</label>
-                            <button type="button" id="qty_decrease" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff;padding:6px 8px;border-radius:6px">-</button>
-                            <span id="selected_package_qty_display" style="min-width:28px;display:inline-block;text-align:center">1</span>
-                            <button type="button" id="qty_increase" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff;padding:6px 8px;border-radius:6px">+</button>
-                        </div>
-                    </div>
-                    <div style="font-size:12px;color:rgba(255,255,255,0.6)">Changed your mind? Just click the other class.</div>
-                </div>
-
-                <div style="text-align:right">
-                    <button type="submit" style="background:#fff;color:#000;padding:10px 26px;border-radius:24px;font-weight:700;border:none;">Complete Purchase & Start Learning</button>
-                </div>
-            </form>
+            <div style="text-align:right;display:flex;gap:10px;justify-content:flex-end">
+                <a id="guest_register_btn" href="{{ route('register') }}" style="background:#fff;color:#000;padding:10px 20px;border-radius:24px;font-weight:700;text-decoration:none">DAFTAR</a>
+                <a id="guest_login_btn" href="{{ route('login') }}" style="background:transparent;border:1px solid #fff;color:#fff;padding:10px 20px;border-radius:24px;font-weight:700;text-decoration:none">LOGIN</a>
+            </div>
                 @else
             <h2 style="font-size:20px;margin-bottom:12px">Personal Details</h2>
             <p style="opacity:0.7;margin-bottom:12px">You're logged in. Click below to continue to the secure payment step.</p>
@@ -452,6 +395,27 @@ document.addEventListener('DOMContentLoaded', function(){
                 const ref = document.getElementById('referral_code_input') ? document.getElementById('referral_code_input').value.trim() : (document.getElementById('hidden_referral_input') ? document.getElementById('hidden_referral_input').value.trim() : '');
                 const params = pid ? ('?package_id=' + encodeURIComponent(pid) + '&package_qty=' + encodeURIComponent(qty)) : '';
                 continueBtn.href = base + params + (ref ? (params ? '&referral=' + encodeURIComponent(ref) : '?referral=' + encodeURIComponent(ref)) : '');
+            }
+            // update guest register/login deep links with selection and redirect target
+            const regBtn = document.getElementById('guest_register_btn');
+            const logBtn = document.getElementById('guest_login_btn');
+            if (regBtn || logBtn) {
+                const pid = card.dataset.packageId || '';
+                const ref = document.getElementById('referral_code_input') ? document.getElementById('referral_code_input').value.trim() : '';
+                const payUrl = '{{ route('kelas.payment', $lesson->id) }}' + (pid ? ('?package_id=' + encodeURIComponent(pid)) : '');
+                if (regBtn) {
+                    let q = '';
+                    if (pid || ref) {
+                        q = '?';
+                        if (pid) q += 'package_id=' + encodeURIComponent(pid);
+                        if (ref) q += (pid ? '&' : '') + 'referral=' + encodeURIComponent(ref);
+                    }
+                    // add redirect_to param so after register we can continue to payment page
+                    regBtn.href = '{{ route('register') }}' + q + (q ? '&' : '?') + 'redirect_to=' + encodeURIComponent(payUrl);
+                }
+                if (logBtn) {
+                    logBtn.href = '{{ route('login') }}' + '?redirect_to=' + encodeURIComponent(payUrl);
+                }
             }
             // update logged-in preview display
             if (previewNameLogged) previewNameLogged.textContent = card.querySelector('h3')?.textContent || '-';

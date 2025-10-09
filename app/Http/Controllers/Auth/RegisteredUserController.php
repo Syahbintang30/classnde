@@ -19,8 +19,12 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
+        // Preserve redirect target (e.g., payment page) if provided from buy page
+        if ($request->query('redirect_to')) {
+            $request->session()->put('url.intended', $request->query('redirect_to'));
+        }
         return view('auth.register');
     }
 

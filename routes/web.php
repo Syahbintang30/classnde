@@ -172,9 +172,9 @@ Route::middleware('auth')->group(function(){
     Route::get('/registerclass/{lesson}/payment', [App\Http\Controllers\KelasController::class, 'payment'])->name('kelas.payment');
 });
 
-// Allow guests to create Midtrans Snap tokens (guest checkout). Protect with CSRF (web middleware) and rate limit.
+// Require login to create Midtrans Snap token (account-first checkout)
 Route::post('/api/midtrans/create', [App\Http\Controllers\MidtransController::class, 'createSnapToken'])
-    ->middleware('throttle:30,1');
+    ->middleware(['auth','throttle:30,1']);
 
 Route::post('/payments/midtrans-notify', [App\Http\Controllers\PaymentController::class, 'midtransNotification'])
     // Detach this route from the default 'web' stack so no session/CSRF is applied at all
