@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
 use App\Rules\NotDisposableEmail;
 use App\Rules\AllowedEmailDomain;
@@ -107,18 +108,22 @@ class RegisteredUserController extends Controller
         }
 
     // Dispatch Registered event (this will queue the email verification notification)
-    event(new Registered($user));
-
-    // Account-first checkout UX: if there's an intended URL (usually payment), auto-login and redirect there.
-    // If none, auto-login and send user to package selection page so they can pick and proceed to payment.
-    $intended = $request->session()->get('url.intended');
-    if ($intended) {
-        Auth::login($user);
-        return redirect()->intended(route('registerclass', absolute: false));
+    // Do not fail registration if mail/notification throws; log and continue
+    try {
+        event(new Registered($user));
+    } catch (\Throwable $e) {
+        Log::error('Failed to send verification email after registration', [
+            'user_id' => $user->id,
+            'error' => $e->getMessage(),
+        ]);
     }
 
-    // Fallback: log in and take user to package selection
+    // Auto-login and redirect: prefer intended URL (payment) if captured, else go to package selection
+    $intended = $request->session()->pull('url.intended'); // pull removes it from session
     Auth::login($user);
+    if ($intended) {
+        return redirect()->to($intended);
+    }
     return redirect()->route('registerclass');
     }
 }

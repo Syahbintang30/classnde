@@ -26,7 +26,7 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-    $response->assertRedirect(route('registerclass', absolute: false));
+    $response->assertRedirect(route('registerclass'));
     }
 
     public function test_disposable_email_is_rejected()

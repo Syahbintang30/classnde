@@ -80,7 +80,7 @@
 
                 <li>
                     <div class="background-img overlay zoom">
-                        <img src="{{ asset('compro/img/ndehero2.jpg') }}" alt="Nde Hero 2">
+                        <img src="{{ asset('compro/img/ndehero2.JPG') }}" alt="Nde Hero 2">
                     </div>
                     <div class="container hero-content">
                         <div class="row">
