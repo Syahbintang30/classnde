@@ -109,8 +109,16 @@ class RegisteredUserController extends Controller
     // Dispatch Registered event (this will queue the email verification notification)
     event(new Registered($user));
 
-    // Do NOT auto-login. Require the user to verify their email first.
-    // Redirect to the verification notice page with a status message.
-    return redirect()->route('verification.notice')->with('status', 'A verification link has been sent to your email address. Please open it to verify your account.');
+    // Account-first checkout UX: if there's an intended URL (usually payment), auto-login and redirect there.
+    // If none, auto-login and send user to package selection page so they can pick and proceed to payment.
+    $intended = $request->session()->get('url.intended');
+    if ($intended) {
+        Auth::login($user);
+        return redirect()->intended(route('registerclass', absolute: false));
+    }
+
+    // Fallback: log in and take user to package selection
+    Auth::login($user);
+    return redirect()->route('registerclass');
     }
 }
