@@ -14,7 +14,8 @@ class VerifyCsrfToken extends Middleware
 	 */
 	protected $except = [
 		// Midtrans server-to-server notification (protected by signature validation & IP whitelist)
-		'payments/midtrans-notify',
+		'payments/midtrans-notify',           // relative path (common in Laravel)
+		'/payments/midtrans-notify',          // absolute path (defensive, some setups expect leading slash)
 		// Twilio webhooks (protected by signature validation & IP whitelist)  
 		'webhooks/twilio/*',
 	];

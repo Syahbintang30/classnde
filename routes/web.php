@@ -177,11 +177,21 @@ Route::post('/api/midtrans/create', [App\Http\Controllers\MidtransController::cl
     ->middleware('throttle:30,1');
 
 Route::post('/payments/midtrans-notify', [App\Http\Controllers\PaymentController::class, 'midtransNotification'])
-    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]) // Webhook needs CSRF disabled
-    ->middleware('webhook.security:midtrans'); // Apply webhook security middleware
+    // Detach this route from the default 'web' stack so no session/CSRF is applied at all
+    ->withoutMiddleware([
+        'web', 'csrf',
+        \App\Http\Middleware\VerifyCsrfToken::class,
+        \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    ])
+    // Only run our webhook security middleware
+    ->middleware('webhook.security:midtrans');
 
 Route::get('/api/transactions/status', [App\Http\Controllers\PaymentController::class, 'transactionStatus'])
-    ->middleware('auth'); // Protect transaction status check
+    ->middleware('throttle:60,1'); // Public, but rate-limited
 
 Route::get('/payments/thankyou', [App\Http\Controllers\PaymentRedirectController::class, 'thankyou'])->name('payments.thankyou');
 Route::get('/payments/error', [App\Http\Controllers\PaymentRedirectController::class, 'error'])->name('payments.error');

@@ -143,11 +143,22 @@ class PaymentRedirectController extends Controller
         }
         // Attempt to expose autologin token (one-time) if settlement and user not logged in
         $autoToken = null;
-            if (!\Illuminate\Support\Facades\Auth::check()) {
+        if (!\Illuminate\Support\Facades\Auth::check()) {
             try {
                 $cached = \Illuminate\Support\Facades\Cache::get('pending_txn:' . $txn->order_id);
                 if (is_array($cached) && isset($cached['autologin_token'])) {
                     $autoToken = $cached['autologin_token'];
+                }
+                // If already settled and token missing but we know user_id from txn/cache, mint a token now
+                $statusLower = strtolower((string) $txn->status);
+                if (!$autoToken && in_array($statusLower, ['settlement','capture','success'])) {
+                    $userId = $txn->user_id ?: (is_array($cached) ? ($cached['user_id'] ?? null) : null);
+                    if ($userId) {
+                        $token = bin2hex(random_bytes(24));
+                        \Illuminate\Support\Facades\Cache::put('autologin:' . $token, $userId, now()->addMinutes(20));
+                        $autoToken = $token;
+                        if (is_array($cached)) { $cached['autologin_token'] = $token; \Illuminate\Support\Facades\Cache::put('pending_txn:' . $txn->order_id, $cached, now()->addHours(12)); }
+                    }
                 }
             } catch (\Throwable $e) {}
         }

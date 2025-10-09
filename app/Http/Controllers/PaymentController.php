@@ -78,8 +78,27 @@ class PaymentController extends Controller
      */
     public function midtransNotification(Request $request)
     {
-        // SECURITY ENHANCEMENT: Validate request IP against Midtrans IP ranges
-        $this->validateMidtransIP($request);
+        $debug = filter_var(env('PAYMENT_DEBUG_LOG', false), FILTER_VALIDATE_BOOLEAN);
+        if ($debug) {
+            try {
+                Log::info('Midtrans webhook: incoming request (debug)', [
+                    'ip' => $request->ip(),
+                    'headers' => $request->headers->all(),
+                ]);
+            } catch (\Throwable $e) {}
+        }
+        // SECURITY: Soft-validate sender IP first (log if abnormal) but do not abort yet.
+        // We'll still enforce signature verification strictly below which is the primary control.
+        try {
+            if (! (app()->environment('local') || config('app.debug'))) {
+                $clientIP = $request->ip();
+                $ranges = ['103.208.23.0/24','103.208.23.6','103.208.23.102','103.127.16.0/23','103.127.17.6','209.58.183.0/24'];
+                $ok = false; foreach ($ranges as $r) { if ($this->ipInRange($clientIP, $r)) { $ok = true; break; } }
+                if (! $ok) {
+                    Log::warning('Midtrans webhook from unexpected IP (continuing due to strict signature check)', ['ip' => $clientIP]);
+                }
+            }
+        } catch (\Throwable $e) { /* non-fatal */ }
         
         $raw = $request->getContent();
         $data = json_decode($raw, true);
@@ -92,6 +111,9 @@ class PaymentController extends Controller
         $txnStatus = $data['transaction_status'] ?? $data['status_code'] ?? null;
 
         Log::info('Midtrans webhook: received', ['order_id' => $orderId, 'transaction_status' => $txnStatus]);
+        if ($debug) {
+            try { Log::info('Midtrans webhook: payload (debug)', ['body' => $data]); } catch (\Throwable $e) {}
+        }
 
         if (! $orderId) {
             Log::warning('Midtrans webhook: missing order_id', $data);
@@ -182,16 +204,22 @@ class PaymentController extends Controller
                         $userId = $user->id;
                         // update cache so future logic sees user_id
                         $cached['user_id'] = $userId;
-                        // generate autologin token
-                        try {
-                            $token = bin2hex(random_bytes(24));
-                            Cache::put('autologin:' . $token, $userId, now()->addMinutes(20));
-                            $cached['autologin_token'] = $token;
-                        } catch (\Throwable $e) {}
                         try { Cache::put('pending_txn:' . $orderId, $cached, now()->addHours(12)); } catch (\Throwable $e) {}
                     }
                 } catch (\Throwable $e) {
                     Log::error('Midtrans webhook: failed creating user from pre_register', ['order_id' => $orderId, 'err' => $e->getMessage()]);
+                }
+            }
+
+            // For guest flows (presence of pre_register), ensure a one-time autologin token is available
+            if (is_array($cached) && isset($cached['pre_register']) && $userId) {
+                if (empty($cached['autologin_token'])) {
+                    try {
+                        $token = bin2hex(random_bytes(24));
+                        Cache::put('autologin:' . $token, $userId, now()->addMinutes(20));
+                        $cached['autologin_token'] = $token;
+                        try { Cache::put('pending_txn:' . $orderId, $cached, now()->addHours(12)); } catch (\Throwable $e) {}
+                    } catch (\Throwable $e) { /* ignore */ }
                 }
             }
 
@@ -206,6 +234,7 @@ class PaymentController extends Controller
                     'status' => $txnStatus,
                     'midtrans_response' => $data,
                 ]);
+                if ($debug) { Log::info('Midtrans webhook: created local transaction (debug)', ['id' => $txn->id, 'order_id' => $orderId, 'user_id' => $userId, 'package_id' => $packageId]); }
             } catch (\Throwable $e) {
                 Log::error('Midtrans webhook: failed to create txn on settlement', ['err' => $e->getMessage(), 'order_id' => $orderId]);
                 return response()->json(['error' => 'create_failed'], 500);
@@ -217,7 +246,7 @@ class PaymentController extends Controller
             $merged = array_merge($existing ?? [], $data ?: []);
             $txn->midtrans_response = $merged;
             $txn->status = $txnStatus;
-            try { $txn->save(); } catch (\Throwable $e) {
+            try { $txn->save(); if ($debug) { Log::info('Midtrans webhook: updated existing transaction (debug)', ['id' => $txn->id, 'order_id' => $orderId]); } } catch (\Throwable $e) {
                 Log::error('Midtrans webhook: failed to update txn on settlement', ['err' => $e->getMessage(), 'order_id' => $orderId]);
             }
         }
