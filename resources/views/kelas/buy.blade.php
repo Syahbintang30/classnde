@@ -184,7 +184,6 @@
 
             <div style="text-align:right;display:flex;gap:10px;justify-content:flex-end">
                 <a id="guest_register_btn" href="{{ route('register') }}" style="background:#fff;color:#000;padding:10px 20px;border-radius:24px;font-weight:700;text-decoration:none">DAFTAR</a>
-                <a id="guest_login_btn" href="{{ route('login') }}" style="background:transparent;border:1px solid #fff;color:#fff;padding:10px 20px;border-radius:24px;font-weight:700;text-decoration:none">LOGIN</a>
             </div>
                 @else
             <h2 style="font-size:20px;margin-bottom:12px">Personal Details</h2>
