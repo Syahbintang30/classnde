@@ -11,6 +11,7 @@
         {{-- HTML5 player will be injected here when playing Bunny HLS/MP4 --}}
        <div id="video-placeholder" class="video-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#000;"
            data-bunny-guid="{{ $initialGuid }}"
+           data-topic-id="{{ $firstTopic?->id }}"
            data-video-id="{{ preg_match('/(youtu\.be\/|v=)([A-Za-z0-9_-]{11})/', $initialUrl, $m) ? ($m[2] ?? '') : '' }}"
        >
             <button id="custom-play" class="custom-play-btn" aria-label="Play video"></button>

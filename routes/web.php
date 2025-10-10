@@ -105,14 +105,20 @@ use App\Http\Controllers\BunnyController;
 use App\Http\Controllers\CoachingController;
 use App\Http\Controllers\CoachingCheckoutController;
 
-Route::get('/topics/{topic}/stream', function (App\Models\Topic $topic) {
-    if ($topic->bunny_guid) {
-        $signed = BunnyController::signUrl($topic->bunny_guid, 300);
-        if ($signed) return response()->json(['url' => $signed]);
-        return response()->json(['url' => BunnyController::cdnUrl($topic->bunny_guid)]);
+Route::get('/topics/{topic}/stream', function ($topic) {
+    // Avoid implicit model binding 404s: resolve manually and always return JSON 200
+    $topicModel = \App\Models\Topic::find($topic);
+    if (! $topicModel) {
+        return response()->json(['url' => null]);
     }
 
-    $path = $topic->video_url ?? null;
+    if ($topicModel->bunny_guid) {
+        $signed = BunnyController::signUrl($topicModel->bunny_guid, 300);
+        if ($signed) return response()->json(['url' => $signed]);
+        return response()->json(['url' => BunnyController::cdnUrl($topicModel->bunny_guid)]);
+    }
+
+    $path = $topicModel->video_url ?? null;
     if (! $path) return response()->json(['url' => null]);
     if (preg_match('#^https?://#i', $path)) return response()->json(['url' => $path]);
     $signed = BunnyController::signUrl($path, 300);
