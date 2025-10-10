@@ -502,7 +502,6 @@
     <script src="{{ asset('compro/js/jquery.flexslider-min.js') }}"></script>
     <script src="{{ asset('compro/js/smooth-scroll.js') }}"></script>
     <script src="{{ asset('compro/js/jquery.magnific-popup.min.js') }}"></script>
-    <script src="{{ asset('compro/js/audio.min.js') }}"></script>
     <script src="{{ asset('compro/js/twitterFetcher_min.js') }}"></script>
     <script src="{{ asset('compro/js/instafeed.min.js') }}"></script>
     <script src="{{ asset('compro/js/jquery.countdown.min.js') }}"></script>
