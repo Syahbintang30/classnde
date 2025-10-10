@@ -377,7 +377,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // If placeholder doesn't have stream URL but topic id exists, ask server for it
                 if(topicId){
-                    fetch(`/topics/${topicId}/stream`).then(r=>r.json()).then(data=>{
+                    fetch(`/topics/${topicId}/stream`).then(async r=>{
+                        try { return await r.json(); } catch(e){ return { url: null, error: 'non-json' }; }
+                    }).then(data=>{
                         if(data && data.url){
                             placeholder.setAttribute('data-stream-url', data.url);
                             destroyHtml5Player();

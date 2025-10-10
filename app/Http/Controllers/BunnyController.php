@@ -153,26 +153,35 @@ class BunnyController extends Controller
         $expiresInSeconds = $expiresInSeconds ?? config('constants.business_logic.bunny_url_expiry_seconds');
         $signingKey = env('BUNNY_SIGNING_KEY');
         $libraryId = env('BUNNY_LIBRARY_ID');
+        $hostname = env('BUNNY_STREAM_HOSTNAME', 'video.b-cdn.net');
         $baseUrl = self::getStreamUrl($guid);
 
-        // Jika tidak ada signing key, kembalikan URL biasa (video akan menjadi publik)
+        // If no signing key is configured, return unsigned URL (requires public library)
         if (! $signingKey) {
             return $baseUrl;
         }
 
-        $expirationTimestamp = time() + $expiresInSeconds;
-        
-        // Format string yang akan di-hash untuk Bunny Stream
-        $hashableString = $libraryId . $signingKey . $expirationTimestamp . $guid;
-        
-        $signature = hash('sha256', $hashableString, true);
-        $token = base64_encode($signature);
-        
-        // Membuat token menjadi URL-safe
-        $token = strtr($token, '+/', '-_');
-        $token = rtrim($token, '=');
+        $expires = time() + (int) $expiresInSeconds;
 
-        return "{$baseUrl}?token={$token}&expires={$expirationTimestamp}";
+        // Determine signing algorithm based on hostname
+        // - For b-cdn.net (CDN token auth), Bunny uses MD5(expires + key + path)
+        // - For video.bunnycdn.com or custom Stream hosts, use HMAC-SHA256 over path or library/video tuple
+        $isCdnHost = stripos($hostname, 'b-cdn.net') !== false;
+
+        if ($isCdnHost) {
+            // CDN token auth: sign the request path including file part
+            // Path that browser will request relative to host
+            $path = '/' . ltrim("{$guid}/playlist.m3u8", '/');
+            $token = md5($expires . $signingKey . $path);
+            return sprintf('%s?token=%s&expires=%d', $baseUrl, $token, $expires);
+        }
+
+        // Stream token auth (HMAC-SHA256). Sign with path based on libraryId and guid for reliability.
+        $pathToSign = '/' . trim($libraryId, '/') . '/' . trim($guid, '/');
+            
+        $rawSig = hash_hmac('sha256', $pathToSign . $expires, $signingKey, true);
+        $token = rtrim(strtr(base64_encode($rawSig), '+/', '-_'), '=');
+        return sprintf('%s?token=%s&expires=%d', $baseUrl, $token, $expires);
     }
 
     /**
