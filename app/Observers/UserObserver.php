@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\User;
 use App\Models\CoachingTicket;
+use App\Services\CoachingTicketService;
 
 class UserObserver
 {
@@ -16,14 +17,8 @@ class UserObserver
             $user->saveQuietly();
         }
 
-        // Ensure the new user has at least one free ticket (existing behaviour)
-        if (! CoachingTicket::where('user_id', $user->id)->exists()) {
-            CoachingTicket::create([
-                'user_id' => $user->id,
-                'is_used' => false,
-                'source' => 'free_on_register',
-            ]);
-        }
+        // Grant free-on-register tickets based on package
+        CoachingTicketService::grantFreeOnRegister($user);
 
         // If this user was referred by another user, give the referrer one free ticket
         if (! empty($user->referred_by)) {
