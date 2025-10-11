@@ -359,13 +359,17 @@ class KelasController extends Controller
                             ]);
 
                             // grant tickets & package immediately when the client already reports settlement
-                            $qty = (int) ($request->input('package_qty') ?: session('pre_register.package_qty') ?: 1);
-                            for ($i = 0; $i < max(1, $qty); $i++) {
-                                $createdTickets[] = CoachingTicket::create([
-                                    'user_id' => $user->id,
-                                    'source' => 'midtrans',
-                                    'is_used' => false,
-                                ]);
+                            // IMPORTANT: Only create 'midtrans' coaching tickets if the purchased package is the coaching ticket itself
+                            $coachingSlug = config('coaching.coaching_package_slug', 'coaching-ticket');
+                            if ($package && ($package->slug ?? null) === $coachingSlug) {
+                                $qty = (int) ($request->input('package_qty') ?: session('pre_register.package_qty') ?: 1);
+                                for ($i = 0; $i < max(1, $qty); $i++) {
+                                    $createdTickets[] = CoachingTicket::create([
+                                        'user_id' => $user->id,
+                                        'source' => 'midtrans',
+                                        'is_used' => false,
+                                    ]);
+                                }
                             }
                             if ($request->input('package_id') && $user) {
                                 $user->package_id = $request->input('package_id');
@@ -421,13 +425,17 @@ class KelasController extends Controller
                                         $request->session()->forget('pre_register');
                                     }
 
-                                    $qty = (int) ($request->input('package_qty') ?: session('pre_register.package_qty') ?: 1);
-                                    for ($i = 0; $i < max(1, $qty); $i++) {
-                                        $createdTickets[] = CoachingTicket::create([
-                                            'user_id' => $user->id,
-                                            'source' => 'midtrans',
-                                            'is_used' => false,
-                                        ]);
+                                    // Only create 'midtrans' coaching tickets for coaching ticket package
+                                    $coachingSlug = config('coaching.coaching_package_slug', 'coaching-ticket');
+                                    if ($package && ($package->slug ?? null) === $coachingSlug) {
+                                        $qty = (int) ($request->input('package_qty') ?: session('pre_register.package_qty') ?: 1);
+                                        for ($i = 0; $i < max(1, $qty); $i++) {
+                                            $createdTickets[] = CoachingTicket::create([
+                                                'user_id' => $user->id,
+                                                'source' => 'midtrans',
+                                                'is_used' => false,
+                                            ]);
+                                        }
                                     }
                                     if ($request->input('package_id') && $user) {
                                         $user->package_id = $request->input('package_id');
