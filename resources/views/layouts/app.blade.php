@@ -110,11 +110,8 @@
 
                     <div id="main-nav" class="nav-links" role="navigation">
                         @php
-                            $coachingLink = route('registerclass');
-                            if (auth()->check()) {
-                                $unused = \App\Models\CoachingTicket::where('user_id', auth()->id())->where('is_used', false)->count();
-                                if ($unused > 0) $coachingLink = route('coaching.upcoming');
-                            }
+                            // Coaching navbar should always go to Upcoming first; from there user can book if they have tickets or buy if not.
+                            $coachingLink = auth()->check() ? route('coaching.upcoming') : route('login');
 
                             $showSongTutorial = false;
                             if (auth()->check()) {

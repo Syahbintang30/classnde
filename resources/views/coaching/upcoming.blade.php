@@ -138,7 +138,7 @@
                     @if($availableTickets > 0)
                         <a href="{{ route('coaching.index') }}" class="btn" style="padding:8px 12px;border-radius:10px;">Book a Session</a>
                     @else
-                        <a href="{{ route('registerclass') }}" class="btn" style="padding:8px 12px;border-radius:10px;">Buy a Ticket</a>
+                        <a href="{{ route('registerclass') }}" class="btn" style="padding:8px 12px;border-radius:10px;">Buy Ticket</a>
                     @endif
                 </div>
             </div>
