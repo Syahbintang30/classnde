@@ -422,8 +422,20 @@ class CoachingController extends Controller
         $date = $request->query('date');
         if (! $date) return response()->json(['error' => 'date missing'], 400);
 
-        // find bookings on that date
-        $booked = CoachingBooking::whereDate('booking_time', $date)->get();
+        // find bookings on that date (only active ones count against capacity)
+        $booked = CoachingBooking::whereDate('booking_time', $date)
+            ->whereIn('status', ['pending','accepted'])
+            ->get();
+
+        // Pre-compute times booked by current user (to label "Your booking")
+        $myBookedTimes = [];
+        foreach ($booked as $b) {
+            try {
+                if ($b->user_id === ($user->id ?? null)) {
+                    $myBookedTimes[] = \Carbon\Carbon::parse($b->booking_time)->format('H:i');
+                }
+            } catch (\Throwable $e) { /* ignore parse issues */ }
+        }
 
         // load admin-defined capacities for this date
         $capacityRows = \App\Models\CoachingSlotCapacity::whereDate('date', $date)->get();
@@ -443,6 +455,9 @@ class CoachingController extends Controller
                 if (isset($result[$t])) {
                     $result[$t]['taken']++;
                     $result[$t]['remaining'] = max(0, $result[$t]['capacity'] - $result[$t]['taken']);
+                    if ($b->user_id === ($user->id ?? null)) {
+                        $result[$t]['mine'] = true;
+                    }
                 }
             }
         } else {
@@ -486,7 +501,9 @@ class CoachingController extends Controller
 
         for ($d = $startDt->copy(); $d->lte($endDt); $d->addDay()) {
             $ds = $d->toDateString();
-            $booked = CoachingBooking::whereDate('booking_time', $ds)->get();
+            $booked = CoachingBooking::whereDate('booking_time', $ds)
+                ->whereIn('status', ['pending','accepted'])
+                ->get();
             $capacityRows = \App\Models\CoachingSlotCapacity::whereDate('date', $ds)->get();
 
             $remainingCount = 0;

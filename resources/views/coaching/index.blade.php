@@ -282,6 +282,7 @@
                     if (remaining <= 0) {
                         btn.classList.add('disabled');
                         btn.disabled = true;
+                        // do not attach click handler for fully booked days
                     } else {
                         const badge = document.createElement('span');
                         badge.className = 'date-badge';
@@ -341,7 +342,35 @@
                     if (typeof s.remaining !== 'undefined' && s.remaining <= 0) {
                         b.classList.add('disabled');
                         b.disabled = true;
+                        if (s.mine) {
+                            // Jika slot ini milik user sendiri namun penuh, tetap beri label "Your booking"
+                            const tag = document.createElement('span');
+                            tag.textContent = 'Your booking';
+                            tag.style.marginLeft = '8px';
+                            tag.style.fontSize = '11px';
+                            tag.style.padding = '2px 6px';
+                            tag.style.borderRadius = '10px';
+                            tag.style.background = 'rgba(100, 200, 255, 0.15)';
+                            tag.style.border = '1px solid rgba(100, 200, 255, 0.35)';
+                            tag.style.color = '#cfe9ff';
+                            b.appendChild(tag);
+                            b.classList.add('mine');
+                        }
                     } else {
+                        if (s.mine) {
+                            // Gaya khusus untuk slot milik user
+                            b.classList.add('mine');
+                            const tag = document.createElement('span');
+                            tag.textContent = 'Your booking';
+                            tag.style.marginLeft = '8px';
+                            tag.style.fontSize = '11px';
+                            tag.style.padding = '2px 6px';
+                            tag.style.borderRadius = '10px';
+                            tag.style.background = 'rgba(100, 200, 255, 0.15)';
+                            tag.style.border = '1px solid rgba(100, 200, 255, 0.35)';
+                            tag.style.color = '#cfe9ff';
+                            b.appendChild(tag);
+                        }
                         b.addEventListener('click', () => {
                             selectedTime = b.dataset.time;
                             document.querySelectorAll('#timeSuggestions .time.selected').forEach(x => x.classList.remove('selected'));
