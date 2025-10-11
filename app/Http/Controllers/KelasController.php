@@ -8,6 +8,7 @@ use App\Models\CoachingTicket;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\CoachingTicketService;
 use Illuminate\Support\Facades\Log;
 
 class KelasController extends Controller
@@ -370,6 +371,10 @@ class KelasController extends Controller
                                 $user->package_id = $request->input('package_id');
                                 $user->save();
                             }
+                            // Idempotent: top-up free_on_register tickets based on final package
+                            if ($user) {
+                                CoachingTicketService::grantFreeOnRegister($user);
+                            }
                             $firstTicketId = !empty($createdTickets) && isset($createdTickets[0]) ? $createdTickets[0]->id : null;
                             if ($package && isset($package->slug) && in_array($package->slug, $beginnerSlugs)) {
                                 return redirect()->route('kelas.thankyou', ['lesson' => $lesson->id])->with(['ticket_id' => $firstTicketId]);
@@ -427,6 +432,10 @@ class KelasController extends Controller
                                     if ($request->input('package_id') && $user) {
                                         $user->package_id = $request->input('package_id');
                                         $user->save();
+                                    }
+                                    // Idempotent: top-up free_on_register tickets based on final package
+                                    if ($user) {
+                                        CoachingTicketService::grantFreeOnRegister($user);
                                     }
                                     $firstTicketId = !empty($createdTickets) && isset($createdTickets[0]) ? $createdTickets[0]->id : null;
                                     if ($package && isset($package->slug) && in_array($package->slug, $beginnerSlugs)) {

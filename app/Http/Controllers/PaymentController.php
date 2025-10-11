@@ -10,6 +10,7 @@ use App\Models\Transaction;
 use App\Models\UserPackage;
 use App\Models\Package;
 use App\Models\User;
+use App\Services\CoachingTicketService;
 
 class PaymentController extends Controller
 {
@@ -288,7 +289,12 @@ class PaymentController extends Controller
                         ]);
                     }
                     // ensure user's package_id set if empty
-                    try { $user = User::find($txn->user_id); if ($user && empty($user->package_id)) { $user->package_id = $txn->package_id; $user->save(); }} catch (\Throwable $e) {}
+                    try {
+                        $user = User::find($txn->user_id);
+                        if ($user && empty($user->package_id)) { $user->package_id = $txn->package_id; $user->save(); }
+                        // Idempotent: top-up free_on_register tickets based on final package
+                        if ($user) { CoachingTicketService::grantFreeOnRegister($user); }
+                    } catch (\Throwable $e) {}
                 } else {
                     Log::warning('Midtrans webhook: upgrade-intermediate purchase not eligible, skipping grant', ['order_id' => $orderId, 'user_id' => $txn->user_id]);
                 }
@@ -302,7 +308,12 @@ class PaymentController extends Controller
                 try {
                     $txn->package_id = $cached['package_id'];
                     $txn->save();
-                    try { $user = User::find($txn->user_id); if ($user && empty($user->package_id)) { $user->package_id = $txn->package_id; $user->save(); }} catch (\Throwable $e) {}
+                    try {
+                        $user = User::find($txn->user_id);
+                        if ($user && empty($user->package_id)) { $user->package_id = $txn->package_id; $user->save(); }
+                        // Idempotent: top-up free_on_register tickets based on final package
+                        if ($user) { CoachingTicketService::grantFreeOnRegister($user); }
+                    } catch (\Throwable $e) {}
                 } catch (\Throwable $e) {}
             }
         }
