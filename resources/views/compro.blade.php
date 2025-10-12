@@ -400,18 +400,17 @@
                             <!-- video element will be injected here -->
                             </div>
                         </div>
+                        <div class="text-center" style="margin-top:16px">
+                            <a href="{{ route('registerclass') }}" class="btn btn-primary with-ico" style="padding:10px 18px;border-radius:24px;">
+                                <i class="icon-user"></i> Daftar Kelas
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
             
-        <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
-    <a class="btn btn-primary with-ico" href="{{ route('registerclass') }}">
-        <i class="icon-user"></i> Work with Me
-    </a>
-</div>
-
-</div>
+        </div>
     </section>
     <!-- Contact Section -->
     <section id="contact" class="contact main top bg-secondary text-white py-5">
