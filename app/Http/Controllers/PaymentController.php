@@ -313,6 +313,15 @@ class PaymentController extends Controller
                         if ($user && empty($user->package_id)) { $user->package_id = $txn->package_id; $user->save(); }
                         // Idempotent: top-up free_on_register tickets based on final package
                         if ($user) { CoachingTicketService::grantFreeOnRegister($user); }
+                        // If this was a coaching-ticket buy with referral discount, redeem units now
+                        try {
+                            $pkg = Package::find($txn->package_id);
+                            if ($pkg && ($pkg->slug ?? null) === config('coaching.coaching_package_slug', 'coaching-ticket')) {
+                                $percentApplied = 0;
+                                if (isset($cached['meta']['applied_referral_percent'])) { $percentApplied = (int) $cached['meta']['applied_referral_percent']; }
+                                if ($percentApplied > 0) { \App\Services\ReferralService::redeemUnits($user, $percentApplied, (string) $orderId); }
+                            }
+                        } catch (\Throwable $e) { /* ignore */ }
                     } catch (\Throwable $e) {}
                 } catch (\Throwable $e) {}
             }

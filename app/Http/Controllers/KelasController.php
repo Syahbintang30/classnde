@@ -150,13 +150,14 @@ class KelasController extends Controller
         $rawAmount = $price * max(1, $qty);
         $appliedReferralPercent = 0;
         $referralCode = session('pre_register.referral') ?: request()->input('referral');
-        if (! empty($referralCode)) {
-            $refUser = \App\Models\User::where('referral_code', $referralCode)->first();
-            $dbVal = \App\Models\Setting::get('referral.discount_percent', null);
-            $discountPercent = $dbVal !== null ? (int) $dbVal : (int) config('referral.discount_percent', 2);
-            if ($refUser) {
-                $appliedReferralPercent = (int) $discountPercent;
+        // Coaching-ticket purchases: apply referrer discount based on invites, no code needed
+        if ($package && $package->slug === config('coaching.coaching_package_slug', 'coaching-ticket')) {
+            if ($user) {
+                $appliedReferralPercent = \App\Services\ReferralService::referrerCoachingDiscountPercent($user);
             }
+        } else if (! empty($referralCode)) {
+            // Course packages: apply 5% when a valid referral code is used (typically for new/guest users)
+            $appliedReferralPercent = \App\Services\ReferralService::guestCourseDiscountPercent($referralCode, $package);
         }
 
         $grossAmount = $rawAmount;
@@ -170,6 +171,11 @@ class KelasController extends Controller
             'original_amount' => $rawAmount,
             'applied_referral_percent' => $appliedReferralPercent,
             'referral_code' => $referralCode,
+            // carry referral meta through cache/pending flow for webhook use
+            'meta' => [
+                'applied_referral_percent' => $appliedReferralPercent,
+                'referral_code' => $referralCode,
+            ],
             'item_details' => [
                 ['id' => $package ? 'package-'.$package->id : 'lesson-'.$lesson->id, 'price' => (int) ($price * (100 - $appliedReferralPercent) / 100), 'quantity' => max(1, $qty), 'name' => $package ? $package->name : $lesson->title . ($appliedReferralPercent ? (' (Referral ' . $appliedReferralPercent . '%)') : '')],
             ],
@@ -237,7 +243,7 @@ class KelasController extends Controller
             ],
         ];
 
-        $midtrans = config('services.midtrans');
+    $midtrans = config('services.midtrans');
         $methods = \App\Models\PaymentMethod::where('is_active', true)->orderBy('name')->get();
 
         return view('kelas.payment', compact('lesson', 'order', 'midtrans', 'package', 'methods'));
@@ -379,6 +385,11 @@ class KelasController extends Controller
                             if ($user) {
                                 CoachingTicketService::grantFreeOnRegister($user);
                             }
+                            // If purchasing coaching-ticket with referral discount applied, redeem units
+                            if ($package && ($package->slug ?? null) === config('coaching.coaching_package_slug', 'coaching-ticket') && !empty($orderId)) {
+                                $percentApplied = (int) ($data['applied_referral_percent'] ?? ($request->input('applied_referral_percent') ?? 0));
+                                if ($percentApplied > 0 && $user) { \App\Services\ReferralService::redeemUnits($user, $percentApplied, (string) $orderId); }
+                            }
                             $firstTicketId = !empty($createdTickets) && isset($createdTickets[0]) ? $createdTickets[0]->id : null;
                             if ($package && isset($package->slug) && in_array($package->slug, $beginnerSlugs)) {
                                 return redirect()->route('kelas.thankyou', ['lesson' => $lesson->id])->with(['ticket_id' => $firstTicketId]);
@@ -444,6 +455,11 @@ class KelasController extends Controller
                                     // Idempotent: top-up free_on_register tickets based on final package
                                     if ($user) {
                                         CoachingTicketService::grantFreeOnRegister($user);
+                                    }
+                                    // redeem referral units for coaching-ticket purchases
+                                    if ($package && ($package->slug ?? null) === config('coaching.coaching_package_slug', 'coaching-ticket') && !empty($orderId)) {
+                                        $percentApplied = (int) ($data['applied_referral_percent'] ?? ($request->input('applied_referral_percent') ?? 0));
+                                        if ($percentApplied > 0 && $user) { \App\Services\ReferralService::redeemUnits($user, $percentApplied, (string) $orderId); }
                                     }
                                     $firstTicketId = !empty($createdTickets) && isset($createdTickets[0]) ? $createdTickets[0]->id : null;
                                     if ($package && isset($package->slug) && in_array($package->slug, $beginnerSlugs)) {

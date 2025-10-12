@@ -10,6 +10,9 @@ use Illuminate\Support\Str;
 use App\Services\OrderIdGenerator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use App\Models\Package;
+use App\Models\User;
+use App\Services\ReferralService;
 
 class MidtransController extends Controller
 {
@@ -82,16 +85,25 @@ class MidtransController extends Controller
     $qty = (int) ($data['package_qty'] ?? 1);
     $unit = (int) ($data['package_unit_price'] ?? 0);
 
-        // If a referral code was provided, validate it and apply discount
-    // prefer DB-configured setting if present
-    $dbVal = \App\Models\Setting::get('referral.discount_percent', null);
-    $discountPercent = $dbVal !== null ? (int) $dbVal : (int) config('referral.discount_percent', 2);
+        // Compute referral discount based on new rules
         $appliedDiscountPercent = 0;
         $ref = null;
-        if (! empty($data['referral'])) {
-            $ref = \App\Models\User::where('referral_code', $data['referral'])->first();
-            if ($ref) {
-                $appliedDiscountPercent = $discountPercent;
+        $pkg = null;
+        if (! empty($data['package_id'])) {
+            $pkg = Package::find($data['package_id']);
+        }
+        // coaching-ticket: use referrer's accumulated 25% units for logged-in buyer
+        if ($pkg && ($pkg->slug ?? null) === config('coaching.coaching_package_slug', 'coaching-ticket')) {
+            if (Auth::check()) {
+                $appliedDiscountPercent = ReferralService::referrerCoachingDiscountPercent(Auth::user());
+            }
+        } else {
+            // course packages: 5% when valid referral code present
+            if (! empty($data['referral'])) {
+                $ref = User::where('referral_code', $data['referral'])->first();
+                if ($ref) {
+                    $appliedDiscountPercent = ReferralService::guestCourseDiscountPercent($data['referral'], $pkg);
+                }
             }
         }
 
@@ -113,7 +125,7 @@ class MidtransController extends Controller
 
         // calculate unit price: if unit not provided, fallback to package price lookup
         if (empty($unit) && ! empty($data['package_id'])) {
-            $pkg = \App\Models\Package::find($data['package_id']);
+            $pkg = $pkg ?: Package::find($data['package_id']);
             $unit = $pkg ? (int) $pkg->price : 0;
         }
 
@@ -137,6 +149,7 @@ class MidtransController extends Controller
                 'voucher_code' => $appliedVoucher ? $appliedVoucher->code : null,
                 'voucher_id' => $appliedVoucher ? $appliedVoucher->id : null,
                 'applied_voucher_percent' => $appliedVoucherPercent,
+                'applied_referral_percent' => $appliedDiscountPercent,
             ];
             // Include pre_register snapshot so webhook can still create the user if client never posts paymentComplete
             if ($request->session()->has('pre_register')) {
