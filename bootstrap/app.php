@@ -18,12 +18,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'rate.limit' => \App\Http\Middleware\RateLimitingMiddleware::class,
             'session.security' => \App\Http\Middleware\SessionSecurityMiddleware::class,
             'audit.log' => \App\Http\Middleware\AuditLogMiddleware::class,
+            'referral.capture' => \App\Http\Middleware\ReferralCaptureMiddleware::class,
         ]);
         
         // Apply security middlewares to all web routes
         $middleware->web(append: [
             \App\Http\Middleware\ContentSecurityPolicyMiddleware::class,
             \App\Http\Middleware\SessionSecurityMiddleware::class,
+            \App\Http\Middleware\ReferralCaptureMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

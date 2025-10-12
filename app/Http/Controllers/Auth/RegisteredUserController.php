@@ -94,15 +94,19 @@ class RegisteredUserController extends Controller
             'referred_by' => null,
         ]);
 
-        // If referral code present on the form, resolve it and set referred_by
-        if ($request->filled('referral')) {
-            $refCode = $request->input('referral');
+        // If referral code present (form or session), resolve it and set referred_by
+        $refCodeInput = $request->input('referral');
+        $refCodeSession = $request->session()->get('referral');
+        $refCode = $refCodeInput ?: $refCodeSession;
+        if (! empty($refCode)) {
             $referrer = User::where('referral_code', $refCode)->first();
             if ($referrer) {
                 $user->referred_by = $referrer->id;
                 $user->save();
-            } else {
-                // invalid referral code supplied — reject the registration with a friendly Indonesian message
+                // Clear the session referral after applying
+                if ($refCodeSession) { $request->session()->forget('referral'); }
+            } else if ($request->filled('referral')) {
+                // Only error when an explicit invalid code was typed into the form
                 return redirect()->back()->withInput()->withErrors(['referral' => 'Kode referral tidak valid. Periksa kembali kode yang Anda masukkan.']);
             }
         }
