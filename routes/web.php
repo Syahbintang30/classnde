@@ -15,7 +15,7 @@ Route::get('/ndeofficial', function () {
 })->name('compro');
 
 Route::get('/', function () {
-    return redirect(route('registerclass'));
+    return redirect(route('compro'));
 });
 
 Route::get('/registerclass', [KelasController::class, 'index'])->middleware('rate.limit:default')->name('registerclass');
