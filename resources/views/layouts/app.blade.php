@@ -192,21 +192,13 @@
         </nav>
     @endif
 
-    {{-- Admin sub-navbar (visible to authenticated admin users) --}}
+    {{-- Admin sub-navbar (only on admin routes, for authenticated admin users) --}}
     @auth
-        @php $isAdminVisible = (auth()->user()->is_admin || auth()->user()->is_superadmin); @endphp
-        @if(
-            $isAdminVisible
-            && ! request()->routeIs('coaching.*')
-            && ! request()->is('coaching*')
-            && ! request()->routeIs('registerclass')
-            && ! request()->is('registerclass*')
-            && ! request()->routeIs('admin.coaching.*')
-            && ! request()->is('admin/coaching*')
-            && ! request()->routeIs('compro')
-            && ! request()->is('compro*')
-        )
-            <!-- hide this admin sub-navbar on coaching pages -->
+        @php
+            $isAdminVisible = (auth()->user()->is_admin || auth()->user()->is_superadmin);
+            $onAdminRoute = request()->routeIs('admin.*') || request()->is('admin*');
+        @endphp
+        @if($isAdminVisible && $onAdminRoute)
             <nav style="background:#0b1220;color:#fff;padding:8px 20px;border-bottom:1px solid #0f1724;">
                 <div style="max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:18px;">
                     <a href="{{ route('admin.dashboard') ?? url('/admin') }}" style="color:#fff;text-decoration:none;font-weight:500;">Admin Dashboard</a>
