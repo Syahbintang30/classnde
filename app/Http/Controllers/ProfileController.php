@@ -29,7 +29,13 @@ class ProfileController extends Controller
 
         $bookings = \App\Models\CoachingBooking::where('user_id', $user->id)->where('status', '!=', 'cancelled')->orderBy('booking_time')->get();
 
-        return view('profile', compact('user', 'package', 'tickets', 'unusedTicketCount', 'bookings'));
+        // Referral metrics
+        $referredCount = \App\Models\User::where('referred_by', $user->id)->count();
+        $availableUnits = \App\Services\ReferralService::availableCoachingUnits($user);
+        $referralDiscountPercent = \App\Services\ReferralService::referrerCoachingDiscountPercent($user);
+        $redeemedUnits = \App\Models\ReferralRedemption::where('user_id', $user->id)->sum('units');
+
+        return view('profile', compact('user', 'package', 'tickets', 'unusedTicketCount', 'bookings', 'referredCount', 'availableUnits', 'referralDiscountPercent', 'redeemedUnits'));
     }
 
     public function edit(Request $request)
@@ -182,7 +188,10 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $referred = \App\Models\User::where('referred_by', $user->id)->orderByDesc('id')->get();
-        return view('profile.referrals', compact('user', 'referred'));
+        $availableUnits = \App\Services\ReferralService::availableCoachingUnits($user);
+        $referralDiscountPercent = \App\Services\ReferralService::referrerCoachingDiscountPercent($user);
+        $redeemedUnits = \App\Models\ReferralRedemption::where('user_id', $user->id)->sum('units');
+        return view('profile.referrals', compact('user', 'referred', 'availableUnits', 'referralDiscountPercent', 'redeemedUnits'));
     }
 
     /**

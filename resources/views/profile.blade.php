@@ -115,6 +115,34 @@
                 <a href="{{ route('profile.referrals') }}" class="btn-ghost">My Referrals</a>
             </div>
 
+            {{-- Referral summary --}}
+            <div style="margin-top:16px;background:rgba(255,255,255,0.02);padding:14px;border-radius:10px">
+                <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+                    <div style="min-width:240px">
+                        <div style="font-weight:800;margin-bottom:8px;color:rgba(255,255,255,0.9)">Referral summary</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;color:rgba(255,255,255,0.75)">
+                            <div>Invites</div>
+                            <div style="text-align:right">{{ $referredCount ?? 0 }}</div>
+                            <div>Units available</div>
+                            <div style="text-align:right">{{ $availableUnits ?? 0 }} × 25%</div>
+                            <div>Discount available</div>
+                            <div style="text-align:right">{{ $referralDiscountPercent ?? 0 }}%</div>
+                            <div>Units redeemed</div>
+                            <div style="text-align:right">{{ $redeemedUnits ?? 0 }}</div>
+                        </div>
+                    </div>
+                    <div style="flex:1;min-width:260px">
+                        <div style="font-weight:700;margin-bottom:6px;color:rgba(255,255,255,0.85)">Your invite link</div>
+                        @php $invite = url('/').'?ref='.(auth()->user()->referral_code ?? ''); @endphp
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <input type="text" readonly value="{{ $invite }}" style="flex:1;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,0.25);color:#ddd;border:1px solid rgba(255,255,255,0.07);font-family:monospace">
+                            <button type="button" class="btn-ghost" onclick="navigator.clipboard.writeText('{{ $invite }}')">Copy</button>
+                        </div>
+                        <div style="margin-top:6px;color:rgba(255,255,255,0.55);font-size:12px">Share with friends. Each successful signup adds 25% discount towards your next coaching ticket (up to 100%).</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="referral-row">
                 <div style="background:rgba(255,255,255,0.02);padding:10px;border-radius:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
                     <div style="font-weight:700;color:rgba(255,255,255,0.85)">Referral code</div>
