@@ -10,29 +10,15 @@
 /* make container centered and cap width on large screens */
 .container { box-sizing: border-box; max-width: 1180px; margin: 0 auto; }
 
-/* layout hooks */
-.register-layout { display:flex; gap:40px; align-items:flex-start; overflow:visible; }
-.left-column { /* reserved for column-specific overrides */ }
-.right-column { width: clamp(340px, 32vw, 420px) !important; }
-
-/* Desktop wide: allow packages to wrap into a grid instead of forcing horizontal scroll */
-@media (min-width: 1100px) {
-    .packages-grid { flex-wrap: wrap !important; overflow-x: visible !important; }
-    .class-card { flex: 1 1 calc(33.333% - 20px) !important; max-width: calc(33.333% - 20px) !important; min-width: 280px !important; }
-}
-
 /* Desktop / tablet breakpoint adjustments */
 @media (max-width: 1024px) {
     .container { padding: 28px 24px !important; }
     /* the main two-column wrapper: force wrapping and smaller column widths */
     .container > div[style*="display:flex"] { flex-wrap: wrap !important; gap: 18px !important; }
-    .register-layout { flex-wrap: wrap !important; gap: 18px !important; }
     /* left content (packages) becomes a bit narrower than full; allow shrinking */
     .container > div[style*="display:flex"] > div[style*="flex:1"] { max-width: 66% !important; width: 100% !important; }
-    .left-column { max-width: 66% !important; width: 100% !important; }
     /* right column (form) becomes narrower */
     .container > div[style*="display:flex"] > div[style*="width:460px"] { width: 32% !important; }
-    .right-column { width: 32% !important; }
     .packages-grid { padding-left: 8px !important; padding-right: 8px !important; }
 }
 
@@ -42,9 +28,6 @@
     .container > div[style*="display:flex"] { flex-direction: column !important; align-items: stretch !important; }
     .container > div[style*="display:flex"] > div[style*="flex:1"] { order: 1 !important; width: 100% !important; max-width: none !important; }
     .container > div[style*="display:flex"] > div[style*="width:460px"] { order: 2 !important; width: 100% !important; }
-    .register-layout { flex-direction: column !important; align-items: stretch !important; }
-    .left-column { order: 1 !important; width: 100% !important; max-width: none !important; }
-    .right-column { order: 2 !important; width: 100% !important; }
 
     /* packages: show stacked cards on mobile (keeps card look) */
     .packages-grid { display: flex !important; flex-direction: column !important; gap: 12px !important; overflow-x: visible !important; -webkit-overflow-scrolling: auto !important; padding-left: 6px !important; padding-right: 6px !important; }
@@ -57,10 +40,6 @@
 
     /* shrink step indicator on small screens */
     .steps { max-width: 520px !important; padding: 0 6px !important; }
-
-    /* make CTA buttons full-width on mobile */
-    .cta-row { display: block !important; text-align: initial !important; }
-    .cta-row a { display:block !important; width: 100% !important; text-align: center !important; }
 }
 
 /* Small phones */
@@ -85,9 +64,9 @@
 </div>
 
 <div class="container" style="padding:40px 60px;color:#fff">
-    <div class="register-layout" style="display:flex;gap:40px;align-items:flex-start;overflow:visible;">
+    <div style="display:flex;gap:40px;align-items:flex-start;overflow:visible;">
         <!-- Left: Class selection -->
-    <div class="left-column" style="flex:1;max-width:680px;overflow:visible;">
+    <div style="flex:1;max-width:680px;overflow:visible;">
             <h2 style="font-size:20px;margin-bottom:12px">Start Your Guitar Journey</h2>
             <p style="opacity:0.7;margin-bottom:18px">From basic chords to improvisation, start your journey with our expert-led classes.</p>
 
@@ -170,7 +149,7 @@
         </div>
 
         <!-- Right: Registration or Purchase column -->
-    <div class="right-column" style="width:460px;">
+        <div style="width:460px;">
             <div id="package_validation" style="display:none;color:#ffb3b3;font-size:13px;margin-bottom:10px;"></div>
             <div id="pay_error" style="display:none;color:#ffb3b3;font-size:13px;margin-bottom:10px;"></div>
             <!-- ensure a global package qty hidden input exists for both guest and logged-in flows -->
@@ -203,14 +182,14 @@
                 <div style="font-size:12px;color:rgba(255,255,255,0.6)">Klik kartu lain untuk ganti kelas</div>
             </div>
 
-            <div class="cta-row" style="text-align:right;display:flex;gap:10px;justify-content:flex-end">
+            <div style="text-align:right;display:flex;gap:10px;justify-content:flex-end">
                 <a id="guest_register_btn" href="{{ route('register') }}" style="background:#fff;color:#000;padding:10px 20px;border-radius:24px;font-weight:700;text-decoration:none">DAFTAR</a>
             </div>
                 @else
             <h2 style="font-size:20px;margin-bottom:12px">Personal Details</h2>
             <p style="opacity:0.7;margin-bottom:12px">You're logged in. Click below to continue to the secure payment step.</p>
 
-            <div class="cta-row" style="text-align:right;margin-bottom:12px">
+            <div style="text-align:right;margin-bottom:12px">
                 {{-- link updated by JS to include selected package id as query param; guard when no lesson exists --}}
                 @php $paymentBase = isset($lesson) && $lesson ? route('kelas.payment', $lesson->id) : null; @endphp
                 @if($paymentBase)
