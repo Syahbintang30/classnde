@@ -43,7 +43,7 @@
                         <label style="display:block;margin-bottom:6px">Password</label>
                         <div class="password-field-inline" style="position:relative">
                             <input name="password" type="password" required style="width:100%;padding:12px 40px 12px 12px;border-radius:6px;background:transparent;border:1px solid #333;color:#fff;" />
-                            <button type="button" class="password-toggle" aria-label="Toggle password visibility" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;padding:6px;">
+                            <button type="button" class="password-toggle" aria-label="Show password" title="Show password" aria-pressed="false" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;padding:6px;cursor:pointer;">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                             </button>
                         </div>
@@ -56,7 +56,7 @@
                         <label style="display:block;margin-bottom:6px">Confirm</label>
                         <div class="password-field-inline" style="position:relative">
                             <input name="password_confirmation" type="password" required style="width:100%;padding:12px 40px 12px 12px;border-radius:6px;background:transparent;border:1px solid #333;color:#fff;" />
-                            <button type="button" class="password-toggle" aria-label="Toggle password visibility" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;padding:6px;">
+                            <button type="button" class="password-toggle" aria-label="Show password" title="Show password" aria-pressed="false" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#fff;padding:6px;cursor:pointer;">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                             </button>
                         </div>
@@ -88,9 +88,15 @@
                     if(input.type === 'password'){
                         input.type = 'text';
                         btn.innerHTML = eyeOff;
+                        btn.setAttribute('aria-label','Hide password');
+                        btn.setAttribute('title','Hide password');
+                        btn.setAttribute('aria-pressed','true');
                     } else {
                         input.type = 'password';
                         btn.innerHTML = eye;
+                        btn.setAttribute('aria-label','Show password');
+                        btn.setAttribute('title','Show password');
+                        btn.setAttribute('aria-pressed','false');
                     }
                 });
                 // Client-side password confirmation and basic strength feedback
