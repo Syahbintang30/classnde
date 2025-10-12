@@ -100,11 +100,15 @@
                 <div style="grid-column:1 / -1" class="info-card">
                     <div class="info-label">Subscription</div>
                     <div class="info-value">
-                        @if(auth()->user()->package_id)
-                            Paket ID: {{ auth()->user()->package_id }}
-                        @else
-                            None
-                        @endif
+                        @php
+                            $pid = auth()->user()->package_id;
+                            $pkgName = null;
+                            if ($pid == 1) { $pkgName = 'Beginner'; }
+                            elseif ($pid == 2) { $pkgName = 'Intermediate'; }
+                            elseif ($pid == 3) { $pkgName = 'Intermediate'; }
+                            elseif (isset($package) && $package) { $pkgName = $package->name; }
+                        @endphp
+                        {{ $pkgName ?? 'None' }}
                     </div>
                 </div>
             </div>
