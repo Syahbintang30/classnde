@@ -186,15 +186,8 @@ class CoachingController extends Controller
         // This prevents auto-creating rooms for pending bookings (which may later be rejected by admin).
         try {
             if ($booking && $booking->status === 'accepted' && $this->twilio->isConfigured()) {
-                // construct room unique name based on the chosen date/time + booking id
-                // e.g. coaching-20250829_1800-123
-                try {
-                    $parsed = \Carbon\Carbon::parse($booking->booking_time);
-                    $roomName = 'coaching-' . $parsed->format('Ymd_Hi') . '-' . $booking->id;
-                } catch (\Throwable $e) {
-                    // fallback to booking id only if parsing fails
-                    $roomName = 'coaching-' . $booking->id;
-                }
+                // Standardize room unique name across the app for consistency
+                $roomName = 'coaching-' . $booking->id;
                 logger()->info('Creating Twilio room', ['room' => $roomName, 'booking_id' => $booking->id]);
                 $room = $this->twilio->createOrFetchRoom($roomName);
                 if ($room && isset($room->sid)) {

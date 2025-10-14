@@ -542,9 +542,46 @@ waitForTwilio().then(function(){
             }
 
         } catch (err) {
-            debug('Failed to connect: ' + (err && err.message ? err.message : err));
-            document.getElementById('video-root').innerText = 'Failed to connect: ' + (err && err.message ? err.message : err);
-            return;
+            const msg = (err && err.message) ? err.message : String(err);
+            debug('Failed to connect: ' + msg);
+            try {
+                // Log connect error to server for diagnostics
+                const errMeta = { message: msg };
+                try { if (err && typeof err === 'object' && 'code' in err) errMeta.code = err.code; } catch(_){}
+                await fetch("{{ url('/coaching') }}/{{ $booking->id }}/event", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ event: 'connect_error', meta: errMeta })
+                });
+            } catch (e) { /* ignore logging failure */ }
+
+            // One-time retry: fetch a fresh token then retry connect
+            try {
+                if (!window.__twilioConnectRetried) {
+                    window.__twilioConnectRetried = true;
+                    const tokenResp = await fetch("{{ url('/coaching/token') }}/" + bookingId, { credentials: 'same-origin' });
+                    if (tokenResp.ok) {
+                        const data = await tokenResp.json();
+                        if (data && data.token && data.room) {
+                            token = data.token; roomName = data.room;
+                            debug('Retrying connect with fresh token for room ' + roomName);
+                            // Retry without publishing local tracks to avoid media permission issues
+                            const retryOpts = { name: roomName };
+                            room = await connect(token, retryOpts);
+                            debug('Connected on retry');
+                        }
+                    }
+                }
+            } catch (e2) {
+                // retry failed, fall through to UI message
+                debug('Retry failed: ' + (e2 && e2.message ? e2.message : e2));
+            }
+
+            if (!room) {
+                document.getElementById('video-root').innerText = 'Failed to connect: ' + msg;
+                return;
+            }
         }
 
         // Hang up flow: show confirmation modal instead of immediate confirm
