@@ -11,19 +11,20 @@
     <div class="cs-meta cs-meta-center">
         <div class="cs-time">{{ \Carbon\Carbon::parse($booking->booking_time)->format('d M Y — H:i') }}</div>
         <div class="cs-status">Status: <span class="status-pill">{{ $booking->status }}</span></div>
-        @if(!empty($booking->notes))
+        @php $isAdminUser = auth()->check() && Gate::allows('admin'); @endphp
+        @if($isAdminUser && !empty($booking->notes))
             <div class="cs-notes">Notes: <strong>{{ Str::limit($booking->notes, 120) }}</strong></div>
         @endif
     </div>
 
     <main class="cs-stage" id="video-root">
         <section class="cs-video-area">
-            <div id="local-media" class="cs-local cs-video-tile" aria-label="local video"></div>
-
-            <div id="remote-media" class="cs-remote-grid">
-                <!-- remote participant tiles appended here -->
+            <div class="cs-video-grid" id="cs-video-grid">
+                <div id="local-media" class="cs-video-tile cs-local" aria-label="local video"></div>
+                <div id="remote-media" class="cs-remote-grid" aria-label="remote videos">
+                    <!-- remote participant tiles appended here -->
+                </div>
             </div>
-
         </section>
 
         <!-- controls moved below the video area (static, not overlay) -->
