@@ -21,18 +21,21 @@ class TwilioWebhookController extends Controller
         
         $clientIP = $request->ip();
         
-        // Twilio official IP ranges for webhooks
+        // Twilio official IP ranges for webhooks (configurable)
         // Reference: https://www.twilio.com/docs/usage/webhooks/ip-addresses
-        $twilioIPs = [
-            '54.172.60.0/23',
-            '54.244.51.0/24', 
-            '54.171.127.192/27',
-            '35.156.191.128/25',
-            '54.65.63.192/27',
-            '54.169.127.128/27',
-            '54.252.254.64/26',
-            '177.71.206.192/26'
-        ];
+        $twilioIPs = config('services.twilio.webhook_ip_ranges');
+        if (!is_array($twilioIPs) || empty($twilioIPs)) {
+            $twilioIPs = [
+                '54.172.60.0/23',
+                '54.244.51.0/24', 
+                '54.171.127.192/27',
+                '35.156.191.128/25',
+                '54.65.63.192/27',
+                '54.169.127.128/27',
+                '54.252.254.64/26',
+                '177.71.206.192/26'
+            ];
+        }
         
         foreach ($twilioIPs as $range) {
             if ($this->ipInRange($clientIP, $range)) {

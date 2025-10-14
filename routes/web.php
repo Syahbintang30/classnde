@@ -164,7 +164,7 @@ Route::middleware('auth')->group(function(){
     Route::get('/coaching/checkout', [CoachingCheckoutController::class, 'checkoutForm'])->name('coaching.checkout');
     Route::post('/coaching/checkout/create-order', [CoachingCheckoutController::class, 'createOrder'])->name('coaching.checkout.create');
     Route::get('/coaching/session/{booking}', [CoachingController::class, 'joinSession'])->name('coaching.session');
-    Route::get('/coaching/token/{booking}', [CoachingController::class, 'token'])->name('coaching.token');
+    Route::get('/coaching/token/{booking}', [CoachingController::class, 'token'])->middleware('throttle:30,1')->name('coaching.token');
     Route::post('/coaching/{booking}/event', [CoachingController::class, 'logEvent'])->middleware('throttle:30,1')->name('coaching.event');
     Route::post('/registerclass/{lesson}/buy', [App\Http\Controllers\KelasController::class, 'purchase'])->name('kelas.purchase');
     Route::get('/registerclass/{lesson}/thankyou', [App\Http\Controllers\KelasController::class, 'thankyou'])->name('kelas.thankyou');
@@ -207,6 +207,16 @@ Route::get('/payments/autologin', [App\Http\Controllers\PaymentRedirectControlle
 Route::get('/payments/finish', [App\Http\Controllers\PaymentRedirectController::class, 'finish'])->name('payments.finish');
 
 Route::post('/webhooks/twilio/video', [App\Http\Controllers\TwilioWebhookController::class, 'video'])
+    // Detach from default web stack: Twilio calls should not use session/CSRF
+    ->withoutMiddleware([
+        'web', 'csrf',
+        \App\Http\Middleware\VerifyCsrfToken::class,
+        \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    ])
     ->middleware('webhook.security:twilio'); // Apply webhook security middleware
 
 require __DIR__ . '/auth.php';

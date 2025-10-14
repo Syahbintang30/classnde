@@ -41,6 +41,9 @@ return [
         'api_key_sid' => env('TWILIO_API_KEY_SID', null),
         'api_key_secret' => env('TWILIO_API_KEY_SECRET', null),
         'service_sid' => env('TWILIO_SERVICE_SID', null),
+        // Optional: overrideable IP ranges for webhook validation (comma-separated CIDRs)
+        // Example env: TWILIO_WEBHOOK_IP_RANGES="54.172.60.0/23,54.244.51.0/24"
+        'webhook_ip_ranges' => array_values(array_filter(array_map('trim', explode(',', env('TWILIO_WEBHOOK_IP_RANGES', ''))))),
     ],
 
     'midtrans' => [

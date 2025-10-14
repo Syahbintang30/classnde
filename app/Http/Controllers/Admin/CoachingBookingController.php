@@ -108,12 +108,8 @@ class CoachingBookingController extends Controller
             if (app()->bound(\App\Services\TwilioService::class)) {
                 $twilio = app(\App\Services\TwilioService::class);
                 if ($twilio->isConfigured() && empty($booking->twilio_room_sid)) {
-                    try {
-                        $parsed = \Carbon\Carbon::parse($booking->booking_time);
-                        $roomName = 'coaching-' . $parsed->format('Ymd_Hi') . '-' . $booking->id;
-                    } catch (\Throwable $e) {
-                        $roomName = 'coaching-' . $booking->id;
-                    }
+                    // Standardize room uniqueName across the app to avoid mismatches
+                    $roomName = 'coaching-' . $booking->id;
                     $room = $twilio->createOrFetchRoom($roomName);
                     if ($room && isset($room->sid)) {
                         $booking->twilio_room_sid = $room->sid;
