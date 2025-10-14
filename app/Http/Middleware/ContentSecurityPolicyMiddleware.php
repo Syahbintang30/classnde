@@ -59,6 +59,15 @@ class ContentSecurityPolicyMiddleware
             $baseDirectives[] = "connect-src 'self' https://api.midtrans.com https://app.midtrans.com https://api.sandbox.midtrans.com";
         }
 
+        // Relax CSP specifically for the coaching session page to allow Twilio SDK and signaling
+        if ($request->is('coaching/session/*')) {
+            $baseDirectives = array_map(function($d){ return $d; }, $baseDirectives);
+            // Add Twilio SDK sources for scripts
+            $baseDirectives[] = "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://media.twiliocdn.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com";
+            // Allow Twilio signaling and media websocket connections
+            $baseDirectives[] = "connect-src 'self' https://api.twilio.com https://video.twilio.com wss: ws: https://media.twiliocdn.com https://*.twilio.com";
+        }
+
         // Join all directives
         return implode('; ', $baseDirectives);
     }
@@ -81,9 +90,16 @@ class ContentSecurityPolicyMiddleware
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         
         // Permissions Policy (formerly Feature Policy)
-        $response->headers->set('Permissions-Policy', 
-            'camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=(self)'
-        );
+        // Default deny camera/microphone; allow on specific coaching routes via route-scoped headers below.
+        $policy = 'camera=(), microphone=(), geolocation=(), fullscreen=(self), payment=(self)';
+        try {
+            $req = request();
+            if ($req && $req->is('coaching/session/*')) {
+                // Allow camera/mic for live coaching session page
+                $policy = 'camera=(self), microphone=(self), geolocation=(), fullscreen=(self), payment=(self)';
+            }
+        } catch (\Throwable $e) { /* ignore */ }
+        $response->headers->set('Permissions-Policy', $policy);
         
         // Strict Transport Security (HTTPS only in production)
         if (app()->environment('production') && request()->secure()) {
