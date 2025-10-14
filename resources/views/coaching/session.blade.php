@@ -545,15 +545,18 @@ waitForTwilio().then(function(){
             const msg = (err && err.message) ? err.message : String(err);
             debug('Failed to connect: ' + msg);
             try {
-                // Log connect error to server for diagnostics
-                const errMeta = { message: msg };
-                try { if (err && typeof err === 'object' && 'code' in err) errMeta.code = err.code; } catch(_){}
-                await fetch("{{ url('/coaching') }}/{{ $booking->id }}/event", {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ event: 'connect_error', meta: errMeta })
-                });
+                // Only log non-permission errors to server to reduce noise
+                const lower = msg.toLowerCase();
+                if (!lower.includes('permission denied')) {
+                    const errMeta = { message: msg };
+                    try { if (err && typeof err === 'object' && 'code' in err) errMeta.code = err.code; } catch(_){}}
+                    await fetch("{{ url('/coaching') }}/{{ $booking->id }}/event", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ event: 'connect_error', meta: errMeta })
+                    });
+                }
             } catch (e) { /* ignore logging failure */ }
 
             // One-time retry: fetch a fresh token then retry connect
@@ -581,10 +584,14 @@ waitForTwilio().then(function(){
             if (!room) {
                 // For non-admin users, keep UI clean (no raw error). Admins see console/log only.
                 try {
+                    const lower = msg.toLowerCase();
                     @if(isset($isAdmin) && $isAdmin)
-                        document.getElementById('video-root').innerText = 'Failed to connect: ' + msg;
+                        document.getElementById('video-root').innerText = 'Failed to connect: ' + msg + (lower.includes('permission denied') ? ' (Browser blocked camera/mic — allow permissions & refresh)' : '');
                     @else
-                        document.getElementById('video-root').innerHTML = '<div class="cs-connection-issue">Reconnecting… (Please check camera/mic permissions)</div>';
+                        const hint = lower.includes('permission denied')
+                          ? 'Akses kamera/mikrofon diblokir. Klik ikon gembok di address bar, izinkan Camera & Microphone, lalu refresh.'
+                          : 'Reconnecting…';
+                        document.getElementById('video-root').innerHTML = '<div class="cs-connection-issue">'+hint+'</div>';
                     @endif
                 } catch(e){}
                 return;
