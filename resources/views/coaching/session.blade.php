@@ -11,17 +11,16 @@
     <div class="cs-meta cs-meta-center">
         <div class="cs-time">{{ \Carbon\Carbon::parse($booking->booking_time)->format('d M Y — H:i') }}</div>
         <div class="cs-status">Status: <span class="status-pill">{{ $booking->status }}</span></div>
-        @php $isAdminUser = auth()->check() && Gate::allows('admin'); @endphp
-        @if($isAdminUser && !empty($booking->notes))
-            <div class="cs-notes">Notes: <strong>{{ Str::limit($booking->notes, 120) }}</strong></div>
+        @if(isset($isAdmin) && $isAdmin && !empty($booking->notes))
+            <div class="cs-notes">Notes: <strong>{{ Str::limit($booking->notes, 160) }}</strong></div>
         @endif
     </div>
 
     <main class="cs-stage" id="video-root">
-        <section class="cs-video-area">
-            <div class="cs-video-grid" id="cs-video-grid">
-                <div id="local-media" class="cs-video-tile cs-local" aria-label="local video"></div>
-                <div id="remote-media" class="cs-remote-grid" aria-label="remote videos">
+        <section class="cs-video-area two-col" aria-label="video area">
+            <div class="cs-video-pair">
+                <div id="local-media" class="cs-local cs-video-tile ar-19x6" aria-label="local video"></div>
+                <div id="remote-media" class="cs-remote-grid ar-19x6">
                     <!-- remote participant tiles appended here -->
                 </div>
             </div>
@@ -580,7 +579,14 @@ waitForTwilio().then(function(){
             }
 
             if (!room) {
-                document.getElementById('video-root').innerText = 'Failed to connect: ' + msg;
+                // For non-admin users, keep UI clean (no raw error). Admins see console/log only.
+                try {
+                    @if(isset($isAdmin) && $isAdmin)
+                        document.getElementById('video-root').innerText = 'Failed to connect: ' + msg;
+                    @else
+                        document.getElementById('video-root').innerHTML = '<div class="cs-connection-issue">Reconnecting… (Please check camera/mic permissions)</div>';
+                    @endif
+                } catch(e){}
                 return;
             }
         }
@@ -628,7 +634,13 @@ waitForTwilio().then(function(){
 }).catch(function(err){
     console.error('[coaching.session] Twilio SDK error:', err);
     var root = document.getElementById('video-root');
-    if (root) root.innerText = 'Video SDK failed to load. Check console for details.';
+    if (root) {
+        @if(isset($isAdmin) && $isAdmin)
+            root.innerText = 'Video SDK failed to load: ' + (err && err.message ? err.message : err);
+        @else
+            root.innerHTML = '<div class="cs-connection-issue">Video is loading…</div>';
+        @endif
+    }
 });
 </script>
 @endpush

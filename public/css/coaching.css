@@ -27,13 +27,18 @@ body { background: var(--bg) !important; color: var(--accent) !important; }
 
 .cs-notes{ color:var(--muted); background:rgba(255,255,255,0.02); padding:8px 12px; border-radius:8px; font-weight:700; }
 
-.cs-stage{ display:flex; flex-direction:column; gap:0; flex:1 1 auto; }
-.cs-video-area{ position:relative; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); padding:12px; height:calc(100vh - 260px); min-height:420px; overflow:hidden; border:1px solid rgba(255,255,255,0.03); width:100%; margin:0; border-radius:12px; display:flex; }
-.cs-video-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); grid-auto-rows:1fr; gap:12px; width:100%; align-items:stretch; }
-.cs-local, .cs-remote-grid, .cs-video-tile{ position:relative; width:100%; height:100%; border-radius:12px; overflow:hidden; background:#000; }
-.cs-remote-grid{ display:contents; }
-.cs-video-tile{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:2px solid rgba(255,255,255,0.35); box-shadow:0 8px 30px rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; }
-.cs-video-tile video, .cs-local video{ width:100%; height:100%; object-fit:cover; display:block; }
+.cs-stage{ display:block; }
+.cs-video-area{ position:relative; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); padding:12px; height:78vh; overflow:hidden; border:1px solid rgba(255,255,255,0.03); width:100%; margin:0; border-radius:10px; }
+.cs-video-pair{ display:grid; grid-template-columns:1fr 1fr; gap:12px; height:100%; }
+.cs-video-pair > .cs-video-tile, .cs-video-pair > .cs-remote-grid{ height:100%; }
+.ar-19x6{ aspect-ratio:19 / 6; }
+.cs-local{ position:relative; width:100%; height:100%; border-radius:10px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.6); border:3px solid rgba(255,255,255,0.85); background:#000; display:flex; align-items:center; justify-content:center; z-index:20; }
+.cs-local video{ width:100%; height:100%; object-fit:cover; display:block; }
+.cs-remote-grid{ display:flex; flex-direction:column; gap:0; width:100%; height:100%; }
+.cs-remote-grid .cs-video-tile{ flex:1 1 auto; }
+.cs-video-tile{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:10px; overflow:hidden; border:3px solid rgba(255,255,255,0.85); display:flex; align-items:center; justify-content:center; position:relative; width:100%; height:100%; box-shadow:0 8px 30px rgba(0,0,0,0.45); }
+.cs-video-tile video{ width:100%; height:100%; object-fit:cover; display:block; }
+.cs-connection-issue{ display:flex; align-items:center; justify-content:center; height:100%; font-weight:700; color:var(--muted); letter-spacing:.5px; }
 .cs-video-tile video{ width:100%; height:100%; object-fit:cover; display:block; }
 .cs-video-tile .placeholder{ color:var(--muted); font-weight:700; }
 
@@ -79,9 +84,8 @@ body { background: var(--bg) !important; color: var(--accent) !important; }
 .cs-local .placeholder{ color:var(--muted); font-weight:700; }
 
 /* ensure videos fill framed containers */
-/* containers already set to full size */
 #local-media, #remote-media { width:100%; height:100%; }
-#local-media video, #remote-media video { width:100%; height:100%; display:block; object-fit:cover; }
+#local-media video, #remote-media video { width:100%; height:100%; display: block; object-fit:cover; }
 
 .cs-bottombar{ margin-top:6px; padding:10px 14px; border-radius:10px; display:flex; align-items:center; justify-content:space-between; color:var(--muted); border:1px solid rgba(255,255,255,0.02); background:linear-gradient(180deg, transparent, rgba(255,255,255,0.01)); }
 .cs-recording{ color:#ff6b6b; font-weight:800; }
@@ -95,9 +99,11 @@ body { background: var(--bg) !important; color: var(--accent) !important; }
 
 /* Responsive */
 @media (max-width:1000px){
-  .cs-video-area{ height:auto; min-height:360px; }
-  .cs-video-grid{ grid-template-columns:1fr; }
-  .cs-overlay-bar{ margin:8px 0 0 0; }
+    .cs-video-pair{ grid-template-columns:1fr; }
+    .cs-video-area{ height:auto; }
+    .cs-local, .cs-remote-grid{ aspect-ratio:auto; height:42vh; }
+    .cs-video-pair > * + * { margin-top:12px; }
+    .cs-overlay-bar{ bottom:8px; margin:0 8px; padding:10px; }
 }
 
 @media (min-width:1001px){
@@ -112,7 +118,7 @@ body { background: var(--bg) !important; color: var(--accent) !important; }
 .cs-remote-grid.layout-spotlight > .cs-video-tile:not(:first-child){ grid-column:2; grid-row:auto; max-height:120px; overflow:hidden; }
 
 /* when two participants on wide screen, make them side-by-side larger */
-.cs-remote-grid.two > .cs-video-tile{ min-height:100%; }
+.cs-remote-grid.two > .cs-video-tile{ min-height:420px; }
 
 .cs-overlay-bar{ display:flex; align-items:center; justify-content:space-between; padding:12px 20px; margin:14px 0 0 0; border-radius:10px; background:linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.6)); box-shadow:0 12px 30px rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.03); }
 .cs-overlay-left{ color:var(--muted); font-weight:700; }
