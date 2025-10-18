@@ -53,7 +53,24 @@
                                     <div style="font-weight:700">{{ optional($b->user)->name }}</div>
                                     <div class="text-muted" style="font-size:13px">{{ optional($b->user)->email }} · {{ optional($b->user)->phone ?? '-' }}</div>
                                 </td>
-                                <td style="max-width:360px;white-space:pre-wrap;word-break:break-word">{{ $b->notes ?: '-' }}</td>
+                                <td style="max-width:360px;white-space:pre-wrap;word-break:break-word">
+                                    @php
+                                        $rawNotes = $b->notes ?? '';
+                                        $notesFiltered = '';
+                                        if ($rawNotes !== '') {
+                                            $lines = preg_split("/(\r\n|\r|\n)/", $rawNotes);
+                                            $kept = [];
+                                            foreach ($lines as $ln) {
+                                                // Hide technical connect errors (e.g., browser permission denied) from UI
+                                                if (stripos($ln, 'connect_error') !== false) continue;
+                                                if (stripos($ln, 'permission denied') !== false) continue;
+                                                $kept[] = $ln;
+                                            }
+                                            $notesFiltered = trim(implode("\n", $kept));
+                                        }
+                                    @endphp
+                                    {{ $notesFiltered !== '' ? $notesFiltered : '-' }}
+                                </td>
                                 <td style="min-width:180px">
                                     @php
                                         $bt = \Carbon\Carbon::parse($b->booking_time);
