@@ -102,6 +102,10 @@ body { background: var(--bg) !important; color: var(--accent) !important; }
 }
 
 @media (min-width:1001px){
+	/* Enforce strict two-column side-by-side layout on desktop */
+	.cs-video-area{ display:flex; flex-direction:row; align-items:stretch; justify-content:stretch; gap:18px; }
+	.cs-video-area > #local-media,
+	.cs-video-area > #remote-media{ flex:1 1 0; min-width:0; height:100%; }
 	.cs-remote-grid { justify-content: stretch; }
 	.cs-remote-grid > .cs-video-tile { max-width: none; }
 	.cs-remote-grid.two { grid-template-columns: 1fr 1fr; }
