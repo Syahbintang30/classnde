@@ -45,6 +45,21 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended(url('/admin'));
         }
 
+        // If the user already owns a package, send them directly to the lesson viewer
+        // so they can continue learning immediately instead of landing on the register page.
+        try {
+            if ($user && ! empty($user->package_id)) {
+                // Find the first available course lesson to use as landing
+                $first = \App\Models\Lesson::where('type', 'course')->orderBy('position')->first();
+                if ($first) {
+                    return redirect()->intended(route('kelas.show', ['lesson' => $first->id]));
+                }
+            }
+        } catch (\Throwable $e) {
+            // If anything goes wrong, fall back to the default intended route
+            \Illuminate\Support\Facades\Log::warning('Login redirect: failed to resolve first lesson', ['err' => $e->getMessage(), 'user_id' => $user ? $user->id : null]);
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 
