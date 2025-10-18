@@ -32,9 +32,13 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120), // 2 hours default
+    // Default session lifetime (minutes). Set to 7 days so users won't be logged out quickly when idle.
+    // Override via SESSION_LIFETIME in your environment if needed.
+    'lifetime' => (int) env('SESSION_LIFETIME', 60 * 24 * 7), // 10080 minutes = 7 days
 
-    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', true), // More secure
+    // Don't expire session when the browser is closed by default for longer idle sessions.
+    // Set SESSION_EXPIRE_ON_CLOSE=true in production env if you want stricter behavior.
+    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
 
     /*
     |--------------------------------------------------------------------------
