@@ -45,11 +45,14 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended(url('/admin'));
         }
 
-        // If this user already owns a package, send them directly to the lesson page
-        // so they can continue learning immediately. Preserve any intended URL if set.
+        // If the user already has a package (is enrolled), send them straight to the lesson
+        // so they can continue learning immediately. Respect intended URL if set.
         if ($user && ! empty($user->package_id)) {
-            $fallback = url('/kelas/4?topic=16');
-            return redirect()->intended($fallback);
+            // Use the named route if available; fallback to absolute URL
+            if (function_exists('route')) {
+                return redirect()->intended(route('kelas.show', 4));
+            }
+            return redirect()->intended(url('/registerclass/4'));
         }
 
         return redirect()->intended(route('dashboard'));
