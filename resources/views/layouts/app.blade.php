@@ -154,7 +154,11 @@
                                     @if($avatar)
                                         <img src="{{ $avatar }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
                                     @else
-                                        <img src="{{ asset('compro/img/ndelogo.png') }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
+                                        {{-- Default profile icon when user hasn't uploaded a photo --}}
+                                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="border-radius:999px;border:2px solid rgba(255,255,255,0.04);background:#0d0d0d;padding:6px">
+                                            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="rgba(255,255,255,0.12)" />
+                                            <path d="M3 21c0-3.866 3.582-7 9-7s9 3.134 9 7v1H3v-1z" fill="rgba(255,255,255,0.06)" />
+                                        </svg>
                                     @endif
                                 </button>
                                 <div id="profile-menu" role="menu" style="display:none;position:absolute;right:0;margin-top:8px;background:linear-gradient(180deg,#0b0b0b,#0e0e0e);border-radius:10px;padding:8px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 18px 40px rgba(0,0,0,0.6);min-width:180px;z-index:999">

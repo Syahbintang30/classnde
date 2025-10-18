@@ -92,7 +92,10 @@
                     @if($avatar)
                         <img id="photo-preview" src="{{ $avatar }}" alt="avatar">
                     @else
-                        <img id="photo-preview" src="{{ asset('compro/img/ndelogo.png') }}" alt="avatar">
+                        <svg id="photo-preview" width="96" height="96" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="rgba(255,255,255,0.12)" />
+                            <path d="M3 21c0-3.866 3.582-7 9-7s9 3.134 9 7v1H3v-1z" fill="rgba(255,255,255,0.06)" />
+                        </svg>
                     @endif
                 </div>
                 <div style="margin-top:12px;">
