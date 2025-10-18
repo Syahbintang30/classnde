@@ -20,7 +20,11 @@ class KelasController extends Controller
     $lessons = Lesson::where('type', 'course')->with(['topics' => function($q){ $q->orderBy('position'); }])->orderBy('position')->get();
     if ($lessons->isEmpty()) {
         // Fallback: show any lessons ordered by position so $lesson is not null
-        $lessons = Lesson::with(['topics' => function($q){ $q->orderBy('position'); }])->orderBy('position')->get();
+        // but exclude song tutorial lessons from the main lesson listing
+        $lessons = Lesson::where('type', '<>', 'song_tutorial')
+            ->with(['topics' => function($q){ $q->orderBy('position'); }])
+            ->orderBy('position')
+            ->get();
     }
     /** @var \App\Models\User|null $user */
     $user = Auth::user();
