@@ -22,7 +22,11 @@
                 <a href="{{ url('/') }}" style="padding:10px 18px;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:#fff;text-decoration:none;">Kembali ke Beranda</a>
             </div>
 
-            <div style="opacity:0.75;font-size:13px">Jika masalah berlanjut, silakan hubungi <a href="mailto:{{ config('app.support_email', 'support@guitarclassbynde.id') }}" style="color:#b8f0c6">support</a> dan sertakan detail kronologi (mis. apa yang Anda lakukan sebelum pesan ini muncul).</div>
+            <div style="opacity:0.75;font-size:13px">
+                Jika masalah berlanjut, silakan hubungi support melalui 
+                <a href="https://wa.me/+6281273796646" style="color:#b8f0c6" target="_blank" rel="noopener noreferrer">kontak di atas</a> 
+                dan sertakan detail kronologi (mis. apa yang Anda lakukan sebelum pesan ini muncul).
+            </div>
         </div>
     </div>
 @endsection
