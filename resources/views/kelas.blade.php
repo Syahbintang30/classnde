@@ -100,6 +100,15 @@ function toggleSidebar() {
     if(isActive) document.body.style.overflow = 'hidden'; else document.body.style.overflow = '';
 }
 
+function closeSidebar(){
+    const sb = document.querySelector('.sidebar');
+    if(!sb) return;
+    sb.classList.remove('active');
+    const bd = document.getElementById('sidebar-backdrop'); if(bd) bd.classList.remove('visible');
+    document.body.classList.remove('sidebar-open');
+    document.body.style.overflow = '';
+}
+
 // Update video, title, description saat klik topik
 // --- HLS / HTML5 player + progress tracking (Bunny CDN) ---
 // load hls.js dynamically
@@ -363,6 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // SPA-style topic navigation (pushState + play)
                 // We do not pass a videoUrl; the player will request /topics/{id}/stream to get the signed URL based on bunny_guid
                 navigateTopic(lessonId, topicId, null, true);
+                // On small screens close the sidebar so the video becomes visible again
+                try{ if(window.innerWidth <= 900) closeSidebar(); }catch(e){}
                 // selection highlight
                 document.querySelectorAll('.topic-item.selected').forEach(s => s.classList.remove('selected'));
                 item.classList.add('selected');
