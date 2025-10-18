@@ -28,11 +28,11 @@ body { background: var(--bg) !important; color: var(--accent) !important; }
 .cs-notes{ color:var(--muted); background:rgba(255,255,255,0.02); padding:8px 12px; border-radius:8px; font-weight:700; }
 
 .cs-stage{ display:grid; grid-template-columns: 1fr; gap:0; align-items:stretch; }
-.cs-video-area{ position:relative; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); padding:16px; height:70vh; /* medium height */ overflow:hidden; border:1px solid rgba(255,255,255,0.03); width:100%; max-width:none; margin:0; border-radius:8px; display:flex; flex-direction:row; gap:18px; align-items:stretch; justify-content:stretch; }
-.cs-local{ position:relative; width:100%; height:100%; border-radius:10px; overflow:hidden; transform-origin:center; box-shadow:0 10px 40px rgba(0,0,0,0.6); border:3px solid rgba(255,255,255,0.85); background:#000; display:flex; align-items:center; justify-content:center; z-index:20; flex:1 1 0; min-width:0; }
+.cs-video-area{ position:relative; background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); padding:16px; height:70vh; overflow:hidden; border:1px solid rgba(255,255,255,0.03); width:100%; max-width:none; margin:0; border-radius:8px; display:grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap:18px; align-items:stretch; justify-items:stretch; }
+.cs-local{ position:relative; width:100%; height:100%; border-radius:10px; overflow:hidden; transform-origin:center; box-shadow:0 10px 40px rgba(0,0,0,0.6); border:3px solid rgba(255,255,255,0.85); background:#000; display:flex; align-items:center; justify-content:center; z-index:20; aspect-ratio:16 / 9; }
 .cs-local video{ width:100%; height:100%; object-fit:cover; display:block; }
-.cs-remote-grid{ display:grid; grid-template-columns: 1fr; gap:12px; width:100%; align-content:center; justify-items:stretch; height:100%; flex:1 1 0; min-width:0; }
-.cs-video-tile{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:10px; overflow:hidden; border:3px solid rgba(255,255,255,0.85); min-height:0; display:flex; align-items:center; justify-content:center; position:relative; width:100%; height:100%; box-shadow:0 8px 30px rgba(0,0,0,0.45); }
+.cs-remote-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:12px; width:100%; align-content:stretch; justify-items:stretch; height:100%; grid-auto-rows:minmax(0,1fr); }
+.cs-video-tile{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:10px; overflow:hidden; border:3px solid rgba(255,255,255,0.85); min-height:0; display:flex; align-items:center; justify-content:center; position:relative; width:100%; height:100%; box-shadow:0 8px 30px rgba(0,0,0,0.45); aspect-ratio:16 / 9; }
 .cs-video-tile video{ width:100%; height:100%; object-fit:cover; display:block; }
 .cs-video-tile .placeholder{ color:var(--muted); font-weight:700; }
 
@@ -94,20 +94,16 @@ body { background: var(--bg) !important; color: var(--accent) !important; }
 /* Responsive */
 @media (max-width:1000px){
 	.cs-stage{ grid-template-columns: 1fr; }
-	.cs-video-area{ padding:10px; height:auto; flex-direction:column; }
-	.cs-local{ position:relative; right:auto; bottom:auto; width:100%; height:auto; aspect-ratio: 16 / 9; margin:0; flex:none; }
-	.cs-remote-grid{ grid-template-columns: 1fr; gap:10px; flex:none; height:auto; }
-	.cs-video-tile{ height:auto; aspect-ratio: 16 / 9; }
+	.cs-video-area{ padding:10px; height:auto; grid-template-columns: 1fr; grid-auto-rows:auto; }
+	.cs-local{ position:relative; right:auto; bottom:auto; width:100%; aspect-ratio: 16 / 9; margin:12px auto 0 auto; }
+	.cs-remote-grid{ grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; }
 	.cs-overlay-bar{ bottom:8px; margin:0 8px; padding:10px; }
 }
 
 @media (min-width:1001px){
-	/* Force 50/50 side-by-side on desktop: local and remote each take equal flex space */
-	.cs-video-area{ display:flex; flex-direction:row; }
-	.cs-local, .cs-remote-grid { flex:1 1 0; min-width:0; height:100%; }
-	.cs-remote-grid { justify-content: stretch; align-content:center; }
-	.cs-remote-grid > .cs-video-tile { max-width: none; width:100%; height:100%; }
-	.cs-remote-grid.two { grid-template-columns: 1fr; } /* keep single column for remote tiles when 2 people */
+	.cs-remote-grid { justify-content: center; }
+	.cs-remote-grid > .cs-video-tile { max-width: 960px; }
+	.cs-remote-grid.two { grid-template-columns: repeat(2, minmax(320px, 1fr)); }
 }
 
 /* spotlight layout: first tile large, others small thumbnails on right */
