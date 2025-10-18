@@ -38,7 +38,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-    return redirect()->intended(route('dashboard'));
+        // If the authenticated user's email looks like an admin account (ends with @admin),
+        // redirect them to the admin dashboard immediately.
+        $user = Auth::user();
+        if ($user && is_string($user->email) && str_ends_with(strtolower($user->email), '@admin')) {
+            return redirect()->intended(url('/admin'));
+        }
+
+        return redirect()->intended(route('dashboard'));
     }
 
     /**
