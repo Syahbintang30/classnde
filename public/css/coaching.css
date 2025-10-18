@@ -112,9 +112,9 @@ body { background: var(--bg) !important; color: var(--accent) !important; }
 
 /* Two participant balanced layout: local on left, single remote on right (desktop) */
 .cs-video-area.two-participants{ grid-template-columns: 1fr 1fr; }
-.cs-video-area.two-participants > .cs-local{ grid-column:1; }
-.cs-video-area.two-participants > .cs-remote-grid{ grid-column:2; }
-.cs-video-area.two-participants > .cs-remote-grid > .cs-video-tile{ height:100%; }
+.cs-video-area.two-participants .cs-local{ grid-column:1; height:100%; }
+.cs-video-area.two-participants .cs-remote-grid{ grid-column:2; height:100%; }
+.cs-video-area.two-participants .cs-remote-grid .cs-video-tile{ height:100%; }
 
 /* spotlight layout: first tile large, others small thumbnails on right */
 .cs-remote-grid.layout-spotlight{ display:grid; grid-template-columns: 1fr 320px; gap:14px; align-items:start; }

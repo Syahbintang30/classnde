@@ -432,9 +432,15 @@ waitForTwilio().then(function(){
                 try {
                     const area = document.querySelector('.cs-video-area');
                     if (!area) return;
-                    const remoteTiles = document.getElementById('remote-media').querySelectorAll('.cs-video-tile').length;
-                    // room.participants.size is remote participants count; include local for total
-                    const total = 1 + (room ? room.participants.size : 0);
+                    const remote = document.getElementById('remote-media');
+                    const remoteTiles = remote ? remote.querySelectorAll('.cs-video-tile').length : 0;
+                    // Detect local presence by looking for a video element inside #local-media
+                    const localMedia = document.getElementById('local-media');
+                    let hasLocal = false;
+                    if (localMedia) {
+                        hasLocal = !!localMedia.querySelector('video');
+                    }
+                    const total = remoteTiles + (hasLocal ? 1 : 0);
                     if (total === 2) {
                         area.classList.add('two-participants');
                     } else {
