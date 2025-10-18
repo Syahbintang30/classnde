@@ -427,6 +427,27 @@ waitForTwilio().then(function(){
             // call once after initial attach
             updateGridClass();
 
+            // Also update the overall video-area when there are exactly two participants total
+            function updateVideoAreaTwoParticipantClass() {
+                try {
+                    const area = document.querySelector('.cs-video-area');
+                    if (!area) return;
+                    const remoteTiles = document.getElementById('remote-media').querySelectorAll('.cs-video-tile').length;
+                    // room.participants.size is remote participants count; include local for total
+                    const total = 1 + (room ? room.participants.size : 0);
+                    if (total === 2) {
+                        area.classList.add('two-participants');
+                    } else {
+                        area.classList.remove('two-participants');
+                    }
+                } catch (e) { /* ignore */ }
+            }
+
+            // call now and on participant changes
+            updateVideoAreaTwoParticipantClass();
+            room.on('participantConnected', updateVideoAreaTwoParticipantClass);
+            room.on('participantDisconnected', updateVideoAreaTwoParticipantClass);
+
             // helper to show/hide audio/video indicators for a participant
             function setParticipantIndicators(participant, audioPresent, videoPresent) {
                 try {
