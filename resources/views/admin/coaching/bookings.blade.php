@@ -53,7 +53,26 @@
                                     <div style="font-weight:700">{{ optional($b->user)->name }}</div>
                                     <div class="text-muted" style="font-size:13px">{{ optional($b->user)->email }} · {{ optional($b->user)->phone ?? '-' }}</div>
                                 </td>
-                                <td style="max-width:360px;white-space:pre-wrap;word-break:break-word">{{ $b->notes ?: '-' }}</td>
+                                <td style="max-width:360px;white-space:pre-wrap;word-break:break-word">
+                                    @php
+                                        // hide noisy telemetry events (connect_error / Permission denied) from admin listing
+                                        $notes = $b->notes ?? '';
+                                        if ($notes) {
+                                            $lines = preg_split('/\r?\n/', trim($notes));
+                                            $filtered = array_filter($lines, function($l) {
+                                                $low = strtolower($l);
+                                                // filter lines that indicate client-side permission/connect errors or automated telemetry
+                                                if (str_contains($low, 'connect_error') || str_contains($low, 'permission denied') || str_contains($low, 'notallowederror')) return false;
+                                                return true;
+                                            });
+                                            $display = trim(implode("\n", array_slice($filtered, 0, 5)));
+                                            if (! $display) $display = '-';
+                                        } else {
+                                            $display = '-';
+                                        }
+                                    @endphp
+                                    {{ $display }}
+                                </td>
                                 <td style="min-width:180px">
                                     @php
                                         $bt = \Carbon\Carbon::parse($b->booking_time);
