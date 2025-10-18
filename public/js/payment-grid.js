@@ -17,9 +17,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const details = e.target.dataset.details;
       const value = e.target.value.toLowerCase();
 
-  // All payment methods are handled via Midtrans Snap in the new flow.
-  // Show a neutral message directing users to complete payment via Midtrans.
-  detailsDisplay.innerHTML = `<h3>${name}</h3><p>Payment will be processed securely via Midtrans. No manual bank or e-wallet transfer is required on this page.</p>`;
+      // Normalize certain bank/VA labels for a cleaner UI: e.g., 'BCA' -> 'Transfer bank'
+      const lname = (name || '').toLowerCase();
+      const isBank = /\b(bca|bank|va|virtual|mandiri|bni|bri)\b/i.test(lname);
+      const displayName = isBank ? 'Transfer bank' : name;
+
+      // All payment methods are handled via Midtrans Snap in the new flow.
+      // Show a neutral message directing users to complete payment via Midtrans.
+      detailsDisplay.innerHTML = `<h3>${displayName}</h3><p>Payment will be processed securely via Midtrans. No manual bank or e-wallet transfer is required on this page.</p>`;
     }
   });
 });
