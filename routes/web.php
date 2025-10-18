@@ -24,6 +24,11 @@ Route::get('/kelas', function () { return redirect(route('registerclass')); })->
 Route::get('/registerclass/{lesson}', [KelasController::class, 'show'])->name('kelas.show');
 Route::get('/registerclass/{lesson}/content', [KelasController::class, 'content'])->name('kelas.content');
 
+// Friendly URLs used by client-side navigation: support direct requests to /kelas/{lesson}
+// so a browser refresh doesn't return 404 when the JS pushState uses /kelas/...
+Route::get('/kelas/{lesson}', [KelasController::class, 'show']);
+Route::get('/kelas/{lesson}/content', [KelasController::class, 'content']);
+
 Route::get('/song-tutorial/index', [App\Http\Controllers\SongTutorialController::class, 'indexLanding'])->name('song.tutorial.index');
 Route::get('/song-tutorial', [App\Http\Controllers\SongTutorialController::class, 'index'])->name('song.tutorial');
 Route::get('/song-tutorial/{lesson}', [App\Http\Controllers\SongTutorialController::class, 'show'])->name('song.tutorial.show');
