@@ -75,10 +75,10 @@
                     @if($avatar)
                         <img src="{{ $avatar }}" alt="avatar">
                     @else
-                        {{-- Default profile SVG icon --}}
-                        <svg width="72" height="72" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#ffffff" />
-                            <path d="M3 21c0-3.866 3.582-7 9-7s9 3.134 9 7v1H3v-1z" fill="#ffffff" opacity="0.12" />
+                        {{-- Default white avatar icon --}}
+                        <svg width="100%" height="100%" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="display:block;fill:#ffffff">
+                            <circle cx="12" cy="8" r="4" />
+                            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
                         </svg>
                     @endif
                 </div>

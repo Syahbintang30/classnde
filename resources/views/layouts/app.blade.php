@@ -154,10 +154,11 @@
                                     @if($avatar)
                                         <img src="{{ $avatar }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
                                     @else
-                                        {{-- Default profile icon when user hasn't uploaded a photo --}}
-                                        <svg width="36" height="36" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="border-radius:999px;border:2px solid rgba(255,255,255,0.04);background:#0d0d0d;padding:6px">
-                                            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#ffffff" />
-                                            <path d="M3 21c0-3.866 3.582-7 9-7s9 3.134 9 7v1H3v-1z" fill="#ffffff" opacity="0.12" />
+                                        {{-- Default white avatar icon (inline SVG) --}}
+                                        <svg width="36" height="36" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="border-radius:999px;border:2px solid rgba(255,255,255,0.04);background:transparent;">
+                                            <defs></defs>
+                                            <circle cx="12" cy="8" r="4" fill="#ffffff" />
+                                            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" fill="#ffffff" />
                                         </svg>
                                     @endif
                                 </button>
