@@ -34,8 +34,13 @@ class KelasController extends Controller
     $eligibleSlugs = config('coaching.eligible_packages', ['beginner','intermediate']);
 
     if ($user) {
-        // logged-in users should normally only see the coaching-ticket package
-        $packages = Package::where('slug', $coachingSlug)->orderBy('price')->get();
+        // If the user does not have any package yet, show beginner/intermediate packages
+        if (empty($user->package_id)) {
+            $packages = Package::whereIn('slug', $eligibleSlugs)->orderBy('price')->get();
+        } else {
+            // logged-in users who already have a package should normally only see the coaching-ticket package
+            $packages = Package::where('slug', $coachingSlug)->orderBy('price')->get();
+        }
 
         // If the user previously purchased the 'beginner' package, offer an
         // "Upgrade Intermediate" package priced at (intermediate - beginner).
