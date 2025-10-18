@@ -11,19 +11,19 @@
     <div class="cs-meta cs-meta-center">
         <div class="cs-time">{{ \Carbon\Carbon::parse($booking->booking_time)->format('d M Y — H:i') }}</div>
         <div class="cs-status">Status: <span class="status-pill">{{ $booking->status }}</span></div>
-        @if(isset($isAdmin) && $isAdmin && !empty($booking->notes))
-            <div class="cs-notes">Notes: <strong>{{ Str::limit($booking->notes, 160) }}</strong></div>
+        @if(!empty($booking->notes))
+            <div class="cs-notes">Notes: <strong>{{ Str::limit($booking->notes, 120) }}</strong></div>
         @endif
     </div>
 
     <main class="cs-stage" id="video-root">
-        <section class="cs-video-area two-col" aria-label="video area">
-            <div class="cs-video-pair">
-                <div id="local-media" class="cs-local cs-video-tile ar-19x6" aria-label="local video"></div>
-                <div id="remote-media" class="cs-remote-grid ar-19x6">
-                    <!-- remote participant tiles appended here -->
-                </div>
+        <section class="cs-video-area">
+            <div id="local-media" class="cs-local cs-video-tile" aria-label="local video"></div>
+
+            <div id="remote-media" class="cs-remote-grid">
+                <!-- remote participant tiles appended here -->
             </div>
+
         </section>
 
         <!-- controls moved below the video area (static, not overlay) -->
@@ -36,7 +36,9 @@
                 <button id="ctl-camera" class="ctl-btn" title="Toggle camera">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.6"></rect><circle cx="12" cy="12" r="2.2" stroke="currentColor" stroke-width="1.6"></circle></svg>
                 </button>
-                <!-- layout toggle removed -->
+                <button id="ctl-layout" class="ctl-btn" title="Toggle layout" aria-pressed="false" aria-label="Toggle layout">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="8" height="14" rx="2" stroke="currentColor" stroke-width="1.6"></rect><rect x="13" y="5" width="8" height="7" rx="2" stroke="currentColor" stroke-width="1.6"></rect><rect x="13" y="13" width="8" height="6" rx="2" stroke="currentColor" stroke-width="1.6"></rect></svg>
+                </button>
                 <button id="hangup" class="ctl-btn ctl-hangup" title="End call" aria-label="End call">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 15v2a2 2 0 0 1-2 2c-6.627 0-12-5.373-12-12a2 2 0 0 1 2-2h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                     <span class="hangup-label">End</span>
@@ -175,9 +177,37 @@ waitForTwilio().then(function(){
     // prefer explicit control elements if present; fall back to legacy ids
     const ctlMic = document.getElementById('ctl-mic');
     const ctlCam = document.getElementById('ctl-camera');
+    const ctlLayout = document.getElementById('ctl-layout');
     const btnMic = document.getElementById('btn-mic') || ctlMic;
     const btnCamera = document.getElementById('btn-camera') || ctlCam;
     // layout toggle removed
+    const remoteGridEl = document.getElementById('remote-media');
+
+    function applyLayout(mode){
+        if (!remoteGridEl) return;
+        if (mode === 'spotlight'){
+            remoteGridEl.classList.add('layout-spotlight');
+            if (ctlLayout) { ctlLayout.classList.add('active'); ctlLayout.setAttribute('aria-pressed','true'); ctlLayout.title = 'Switch to side-by-side'; }
+            try { localStorage.setItem('coaching_layout','spotlight'); } catch(_){}
+        } else {
+            remoteGridEl.classList.remove('layout-spotlight');
+            if (ctlLayout) { ctlLayout.classList.remove('active'); ctlLayout.setAttribute('aria-pressed','false'); ctlLayout.title = 'Switch to spotlight'; }
+            try { localStorage.setItem('coaching_layout','side'); } catch(_){}
+        }
+    }
+
+    // initialize from saved preference
+    (function(){
+        let pref = 'side';
+        try { pref = localStorage.getItem('coaching_layout') || 'side'; } catch(_){}
+        applyLayout(pref);
+    })();
+
+    // toggle handler
+    ctlLayout && ctlLayout.addEventListener('click', function(){
+        let isSpot = remoteGridEl && remoteGridEl.classList.contains('layout-spotlight');
+        applyLayout(isSpot ? 'side' : 'spotlight');
+    });
 
         // Publications (if room connected)
         let localVideoPublication = null;
@@ -545,18 +575,15 @@ waitForTwilio().then(function(){
             const msg = (err && err.message) ? err.message : String(err);
             debug('Failed to connect: ' + msg);
             try {
-                // Only log non-permission errors to server to reduce noise
-                const lower = msg.toLowerCase();
-                if (!lower.includes('permission denied')) {
-                    const errMeta = { message: msg };
-                    try { if (err && typeof err === 'object' && 'code' in err) errMeta.code = err.code; } catch(_){}}
-                    await fetch("{{ url('/coaching') }}/{{ $booking->id }}/event", {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                        credentials: 'same-origin',
-                        body: JSON.stringify({ event: 'connect_error', meta: errMeta })
-                    });
-                }
+                // Log connect error to server for diagnostics
+                const errMeta = { message: msg };
+                try { if (err && typeof err === 'object' && 'code' in err) errMeta.code = err.code; } catch(_){}
+                await fetch("{{ url('/coaching') }}/{{ $booking->id }}/event", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ event: 'connect_error', meta: errMeta })
+                });
             } catch (e) { /* ignore logging failure */ }
 
             // One-time retry: fetch a fresh token then retry connect
@@ -582,18 +609,7 @@ waitForTwilio().then(function(){
             }
 
             if (!room) {
-                // For non-admin users, keep UI clean (no raw error). Admins see console/log only.
-                try {
-                    const lower = msg.toLowerCase();
-                    @if(isset($isAdmin) && $isAdmin)
-                        document.getElementById('video-root').innerText = 'Failed to connect: ' + msg + (lower.includes('permission denied') ? ' (Browser blocked camera/mic — allow permissions & refresh)' : '');
-                    @else
-                        const hint = lower.includes('permission denied')
-                          ? 'Akses kamera/mikrofon diblokir. Klik ikon gembok di address bar, izinkan Camera & Microphone, lalu refresh.'
-                          : 'Reconnecting…';
-                        document.getElementById('video-root').innerHTML = '<div class="cs-connection-issue">'+hint+'</div>';
-                    @endif
-                } catch(e){}
+                document.getElementById('video-root').innerText = 'Failed to connect: ' + msg;
                 return;
             }
         }
@@ -641,13 +657,7 @@ waitForTwilio().then(function(){
 }).catch(function(err){
     console.error('[coaching.session] Twilio SDK error:', err);
     var root = document.getElementById('video-root');
-    if (root) {
-        @if(isset($isAdmin) && $isAdmin)
-            root.innerText = 'Video SDK failed to load: ' + (err && err.message ? err.message : err);
-        @else
-            root.innerHTML = '<div class="cs-connection-issue">Video is loading…</div>';
-        @endif
-    }
+    if (root) root.innerText = 'Video SDK failed to load. Check console for details.';
 });
 </script>
 @endpush

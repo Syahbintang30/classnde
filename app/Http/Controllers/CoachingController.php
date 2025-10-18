@@ -363,17 +363,6 @@ class CoachingController extends Controller
             if ($meta && is_array($meta)) {
                 $line .= ' ' . json_encode($meta);
             }
-            // Suppress repetitive browser permission denied connect errors to avoid noise
-            if (($data['event'] ?? '') === 'connect_error' && isset($meta['message'])) {
-                $msg = strtolower($meta['message']);
-                if (str_contains($msg, 'permission denied')) {
-                    // If last notes already contain a recent permission denied entry, skip
-                    $existing = $booking->notes ?? '';
-                    if (preg_match('/connect_error.*permission denied/i', $existing)) {
-                        return response()->json(['ok' => true, 'suppressed' => true]);
-                    }
-                }
-            }
             $booking->notes = trim(($booking->notes ? $booking->notes . "\n\n" : '') . $line);
             $booking->save();
         } catch (\Throwable $e) {
