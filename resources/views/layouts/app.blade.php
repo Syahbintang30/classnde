@@ -119,17 +119,20 @@
                                 $u = auth()->user();
                                 // Use configurable method instead of hardcoded package_id == 2
                                 $showSongTutorial = $u->hasIntermediateAccess();
-                                // Consider user to "have a package" when package_id is set
                                 $hasPackage = ! empty($u->package_id);
                             }
                         @endphp
 
-                        <a href="{{ url('/ndeofficial') }}" class="{{ request()->is('ndeofficial*') ? 'active' : '' }}">Home</a>
-                        <a href="{{ route('registerclass') }}" class="{{ request()->routeIs('registerclass') ? 'active' : '' }}">Courses</a>
+                        {{-- If the user is authenticated but does not have a package, only show the Courses link. 
+                             Keep the profile menu on the right so they can access Profile / Logout. --}}
+                        @if(auth()->check() && ! $hasPackage)
+                            <a href="{{ route('registerclass') }}" class="{{ request()->routeIs('registerclass') ? 'active' : '' }}">Courses</a>
+                        @else
+                            <a href="{{ url('/ndeofficial') }}" class="{{ request()->is('ndeofficial*') ? 'active' : '' }}">Home</a>
+                            <a href="{{ route('registerclass') }}" class="{{ request()->routeIs('registerclass') ? 'active' : '' }}">Courses</a>
 
-                        {{-- If the user is authenticated but does NOT have a package, only show Courses link and hide other nav links and profile actions. --}}
-                        @auth
-                            @if($hasPackage)
+                            {{-- Only show lesson/coaching/song tutorial links to authenticated users who have a package --}}
+                            @auth
                                 @if($firstLessonId)
                                     <a href="{{ route('kelas.show', $firstLessonId) }}" class="{{ request()->routeIs('kelas.show') ? 'active' : '' }}">Lesson</a>
                                 @else
@@ -139,38 +142,33 @@
                                 @if($showSongTutorial)
                                     <a href="{{ route('song.tutorial.index') }}" class="{{ request()->routeIs('song.tutorial.index') ? 'active' : '' }}">Song Tutorial</a>
                                 @endif
-                            @endif
-                        @endauth
+                            @endauth
+                        @endif
                     </div>
 
                     <div class="nav-actions">
                         @auth
-                            @if($hasPackage)
-                                <div style="position:relative">
-                                    <button id="profile-toggle" aria-haspopup="true" aria-expanded="false" style="display:inline-flex;align-items:center;gap:10px;background:transparent;border:none;padding:6px;border-radius:10px;cursor:pointer">
-                                        @php $avatar = auth()->user()->photoUrl(); @endphp
-                                        @if($avatar)
-                                            <img src="{{ $avatar }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
-                                        @else
-                                            <img src="{{ asset('compro/img/ndelogo.png') }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
-                                        @endif
-                                    </button>
-                                    <div id="profile-menu" role="menu" style="display:none;position:absolute;right:0;margin-top:8px;background:linear-gradient(180deg,#0b0b0b,#0e0e0e);border-radius:10px;padding:8px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 18px 40px rgba(0,0,0,0.6);min-width:180px;z-index:999">
-                                        <div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.02)">
-                                            <div style="font-weight:700">{{ auth()->user()->name }}</div>
-                                            <div style="font-size:12px;color:rgba(255,255,255,0.65)">{{ auth()->user()->email }}</div>
-                                        </div>
-                                        <a href="{{ route('profile') }}" style="display:block;padding:8px 10px;color:#fff;text-decoration:none">Profile</a>
-                                        <form method="POST" action="{{ route('logout') }}">
-                                            @csrf
-                                            <button type="submit" style="width:100%;text-align:left;padding:8px 10px;border:none;background:transparent;color:#fff;cursor:pointer">Logout</button>
-                                        </form>
+                            <div style="position:relative">
+                                <button id="profile-toggle" aria-haspopup="true" aria-expanded="false" style="display:inline-flex;align-items:center;gap:10px;background:transparent;border:none;padding:6px;border-radius:10px;cursor:pointer">
+                                    @php $avatar = auth()->user()->photoUrl(); @endphp
+                                    @if($avatar)
+                                        <img src="{{ $avatar }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
+                                    @else
+                                        <img src="{{ asset('compro/img/ndelogo.png') }}" alt="avatar" style="width:36px;height:36px;border-radius:999px;border:2px solid rgba(255,255,255,0.04);object-fit:cover">
+                                    @endif
+                                </button>
+                                <div id="profile-menu" role="menu" style="display:none;position:absolute;right:0;margin-top:8px;background:linear-gradient(180deg,#0b0b0b,#0e0e0e);border-radius:10px;padding:8px;border:1px solid rgba(255,255,255,0.04);box-shadow:0 18px 40px rgba(0,0,0,0.6);min-width:180px;z-index:999">
+                                    <div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.02)">
+                                        <div style="font-weight:700">{{ auth()->user()->name }}</div>
+                                        <div style="font-size:12px;color:rgba(255,255,255,0.65)">{{ auth()->user()->email }}</div>
                                     </div>
+                                    <a href="{{ route('profile') }}" style="display:block;padding:8px 10px;color:#fff;text-decoration:none">Profile</a>
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit" style="width:100%;text-align:left;padding:8px 10px;border:none;background:transparent;color:#fff;cursor:pointer">Logout</button>
+                                    </form>
                                 </div>
-                            @else
-                                {{-- Authenticated but no package: intentionally hide profile actions per UX request --}}
-                                <div style="display:none"></div>
-                            @endif
+                            </div>
                         @else
                             @if(Route::currentRouteName() !== 'login')
                                 <a href="{{ route('login') }}" class="nav-login-button" aria-label="Login">
