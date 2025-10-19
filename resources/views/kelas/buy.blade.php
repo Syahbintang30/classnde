@@ -193,7 +193,7 @@
                 {{-- link updated by JS to include selected package id as query param; guard when no lesson exists --}}
                 @php $paymentBase = isset($lesson) && $lesson ? route('kelas.payment', $lesson->id) : null; @endphp
                 @if($paymentBase)
-                    <a id="continue_payment_btn" href="{{ $paymentBase }}" style="background:#fff;color:#000;padding:10px 26px;border-radius:24px;font-weight:700;border:none;display:inline-block;text-decoration:none;">CONTINUE TO PAYMENT</a>
+                    {{-- continue button moved below the selected package preview to improve UX for logged-in users --}}
                 @else
                     <div style="padding:10px 14px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);font-size:13px;color:#ffd9d9;">Belum ada materi tersedia untuk pembayaran. Silakan kembali lagi nanti.</div>
                 @endif
@@ -225,6 +225,11 @@
                     </div>
                 </div>
                 <div style="font-size:12px;color:rgba(255,255,255,0.6)">Change package by clicking a card on the left</div>
+            </div>
+            <div style="text-align:right;margin-top:12px">
+                @if($paymentBase)
+                    <a id="continue_payment_btn" href="{{ $paymentBase }}" style="background:#fff;color:#000;padding:10px 26px;border-radius:24px;font-weight:700;border:none;display:inline-block;text-decoration:none;">CONTINUE TO PAYMENT</a>
+                @endif
             </div>
             </div>
             @endguest
