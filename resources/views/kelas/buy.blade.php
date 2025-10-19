@@ -189,7 +189,7 @@
             <h2 style="font-size:20px;margin-bottom:12px">Personal Details</h2>
             <p style="opacity:0.7;margin-bottom:12px">You're logged in. Click below to continue to the secure payment step.</p>
 
-            <div style="text-align:right;margin-bottom:12px">
+                <div style="text-align:right;margin-bottom:12px">
                 {{-- link updated by JS to include selected package id as query param; guard when no lesson exists --}}
                 @php $paymentBase = isset($lesson) && $lesson ? route('kelas.payment', $lesson->id) : null; @endphp
                 @if($paymentBase)
@@ -198,6 +198,18 @@
                     <div style="padding:10px 14px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);font-size:13px;color:#ffd9d9;">Belum ada materi tersedia untuk pembayaran. Silakan kembali lagi nanti.</div>
                 @endif
             </div>
+
+                {{-- If the logged-in user has no package, allow entering a referral code (same UX as guest) --}}
+                @php $uid = auth()->user()->package_id ?? null; @endphp
+                @if(empty($uid))
+                    <input type="hidden" name="referral" id="hidden_referral_input" value="{{ old('referral') ?? session('referral') ?? '' }}" />
+                    <div style="margin-top:12px;margin-bottom:12px">
+                        <label style="display:block;margin-bottom:6px">Kode Referral (opsional)</label>
+                        <input id="referral_code_input" name="referral" value="{{ old('referral') ?? session('referral') ?? '' }}" placeholder="Masukkan kode referral atau kosongkan" style="width:100%;padding:12px;background:transparent;border:1px solid #333;color:#fff !important;border-radius:4px;" />
+                        @error('referral') <div style="color:#ffb3b3;margin-top:6px;font-size:13px">{{ $message }}</div> @enderror
+                        <div id="referral_hint" style="margin-top:6px;color:rgba(255,255,255,0.6);font-size:13px">Jika Anda punya kode referral, masukkan untuk mendapatkan diskon.</div>
+                    </div>
+                @endif
 
             <!-- Logged-in selected package preview + qty (mirrors guest preview) -->
             <div id="selected_package_preview_logged" style="margin-top:12px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center">
