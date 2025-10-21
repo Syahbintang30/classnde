@@ -7,6 +7,10 @@ use App\Http\Controllers\KelasController;
 use App\Http\Controllers\Admin\TopicController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\SitemapController;
+
+// Sitemap route
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 
 Route::get('/ndeofficial', function () {
     $promoGuid = \App\Models\Setting::get('nde.promo_bunny_guid', null);

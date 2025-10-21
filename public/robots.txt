@@ -1,2 +1,17 @@
 User-agent: *
-Disallow:
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /kelas/
+Disallow: /coaching/
+Disallow: /profile/
+Disallow: /login/
+Disallow: /register/
+
+# Allow important public pages
+Allow: /ndeofficial
+Allow: /registerclass
+
+# Sitemap location
+Sitemap: https://guitarclassbynde.id/sitemap.xml
