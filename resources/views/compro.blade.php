@@ -24,8 +24,7 @@
         </div>
     </div>Creator Gen Z Indonesia dengan 9.7M video views di TikTok.')
 
-@section('meta_keywords', 'Nde Official, Alfarezi, guitar sessions, brand ambassador, content creator, TikTok covers,
-    Crafter guitars, Enya guitars, Indonesia musician, guitar lessons')
+@section('meta_keywords', 'Nde Official, Alfarezi, guitar sessions, brand ambassador, content creator, TikTok covers, Crafter guitars, Enya guitars, Indonesia musician, guitar lessons, guitar class, kelas gitar, kursus gitar, nde, tiktok gitar, guitar tiktok, guiter covers, how to play guitar, belajar gitar, belajar gitar dari nol')
 
 @section('og_title', 'Nde Official - Guitar Sessions & Brand Ambassador')
 @section('og_description', 'Exclusive Guitar Sessions by Nde. Brand Ambassador untuk Crafter & Enya dengan 9.7M video
