@@ -59,6 +59,7 @@
         "alternateName": "Nde",
         "description": "Gen Z content creator from Indonesia passionate about music and TikTok covers",
         "url": "{{ url()->current() }}",
+        "logo": "{{ asset('compro/img/ndelogo.webp') }}",
         "image": "{{ asset('compro/img/ndehero.webp') }}",
         "sameAs": [
             "https://www.instagram.com/rizqie.alfarezi/",
